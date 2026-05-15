@@ -6,16 +6,16 @@
 - Keep the .NET 10 SDK-style solution building with zero warnings.
 - Produce a versioned internal NuGet package.
 - Compare generated binaries against the `IBatisNet.1.0.0` package currently
-  used by HIS deployments.
-- Run a smoke test with representative HIS `SqlMap.config` and SQL map XML
+  used by legacy deployments.
+- Run a smoke test with representative `SqlMap.config` and SQL map XML
   files.
 
-## Phase 2 - HIS Compatibility
+## Phase 2 - Legacy Compatibility
 
-- Add tests for dynamic SQL tags used by HIS maps.
+- Add tests for dynamic SQL tags used by legacy maps.
 - Add tests for SQL Server and Oracle provider configuration paths.
-- Verify logging behavior with the log4net version used by HIS.
-- Smoke test real HIS `SqlMap.config`, `providers.config`, and representative
+- Verify logging behavior with application-owned log4net versions.
+- Smoke test real `SqlMap.config`, `providers.config`, and representative
   SQL map XML files on .NET 10.
 - Document binding redirect requirements, if any.
 

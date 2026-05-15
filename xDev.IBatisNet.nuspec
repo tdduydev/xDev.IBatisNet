@@ -2,7 +2,7 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2013/05/nuspec.xsd">
   <metadata>
     <id>xDev.IBatisNet</id>
-    <version>1.6.2-xdev.8</version>
+    <version>1.6.2-xdev.9</version>
     <title>xDev.IBatisNet</title>
     <authors>tdduydev; Apache iBATIS.NET contributors</authors>
     <owners>tdduydev</owners>
@@ -11,8 +11,8 @@
     <repository type="git" url="https://github.com/tdduydev/xDev.IBatisNet" />
     <readme>README.md</readme>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
-    <description>Compatibility-first xDev-maintained iBATIS.NET package for legacy HIS systems. The package keeps IBatisNet assembly names for existing applications and adds .NET 10 assets.</description>
-    <releaseNotes>Add .NET Framework 4.0/4.5.2/4.7.2 package assets for legacy HIS compatibility while keeping the strong-named IBatisNet assembly identity and net10.0 assets.</releaseNotes>
+    <description>Compatibility-first xDev-maintained iBATIS.NET package for legacy .NET applications. The package keeps IBatisNet assembly names for existing applications and adds .NET 10 assets.</description>
+    <releaseNotes>Add .NET Framework 4.0/4.5.2/4.7.2 package assets for legacy application compatibility while keeping the strong-named IBatisNet assembly identity and net10.0 assets.</releaseNotes>
     <copyright>Copyright 2007 The Apache Software Foundation and contributors; modifications copyright tdduydev.</copyright>
     <tags>ibatis ibatisnet datamapper xdev legacy sqlmap</tags>
     <dependencies>
