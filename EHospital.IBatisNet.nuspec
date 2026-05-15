@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2013/05/nuspec.xsd">
+  <metadata>
+    <id>EHospital.IBatisNet</id>
+    <version>1.6.2-ehospital.0</version>
+    <title>EHospital.IBatisNet</title>
+    <authors>tdduydev; Apache iBATIS.NET contributors</authors>
+    <owners>tdduydev</owners>
+    <license type="expression">Apache-2.0</license>
+    <projectUrl>https://github.com/tdduydev/EHospital.IBatisNet</projectUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>Compatibility-first iBATIS.NET fork for eHospital legacy systems. The package keeps IBatisNet assembly names for existing applications.</description>
+    <releaseNotes>Initial eHospital fork package metadata. No public API rename is intended in this baseline.</releaseNotes>
+    <copyright>Copyright 2007 The Apache Software Foundation and contributors; modifications copyright tdduydev.</copyright>
+    <tags>ibatis ibatisnet datamapper ehospital legacy sqlmap</tags>
+    <dependencies>
+      <group targetFramework=".NETFramework4.0">
+        <dependency id="Castle.Core" version="3.1.0" />
+        <dependency id="log4net" version="1.2.11" />
+      </group>
+    </dependencies>
+  </metadata>
+  <files>
+    <file src="IBatisNet.Common\bin\Release\IBatisNet.Common.dll" target="lib\net40" />
+    <file src="IBatisNet.Common\bin\Release\IBatisNet.Common.xml" target="lib\net40" />
+    <file src="IBatisNet.DataMapper\bin\Release\IBatisNet.DataMapper.dll" target="lib\net40" />
+    <file src="IBatisNet.DataMapper\bin\Release\IBatisNet.DataMapper.xml" target="lib\net40" />
+    <file src="IBatisNet.Common.Logging.Log4Net\bin\Release\IBatisNet.Common.Logging.Log4Net.dll" target="lib\net40" />
+    <file src="IBatisNet.Common.Logging.Log4Net\bin\Release\IBatisNet.Common.Logging.Log4Net.xml" target="lib\net40" />
+  </files>
+</package>

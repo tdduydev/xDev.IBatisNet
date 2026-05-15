@@ -32,6 +32,7 @@ using System;
 using System.Collections;
 using System.Collections.Specialized;
 using System.Data;
+using System.Reflection;
 using System.Text;
 using IBatisNet.Common;
 using IBatisNet.Common.Utilities;
@@ -43,6 +44,7 @@ using IBatisNet.DataMapper.Configuration.ResultMapping;
 using IBatisNet.DataMapper.DataExchange;
 using IBatisNet.DataMapper.Exceptions;
 using IBatisNet.DataMapper.MappedStatements;
+using IBatisNet.DataMapper.Scope;
 using IBatisNet.DataMapper.SessionStore;
 using IBatisNet.DataMapper.TypeHandlers;
 
