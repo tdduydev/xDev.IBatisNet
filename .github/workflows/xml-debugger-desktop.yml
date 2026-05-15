@@ -1,0 +1,253 @@
+name: XML Debugger Desktop
+
+on:
+  push:
+    branches:
+      - master
+      - "codex/**"
+    tags:
+      - "xml-debugger-v*"
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Optional desktop tool version. Leave blank for 0.1.<run-number>."
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+env:
+  PROJECT_PATH: tools/XDev.IBatisNet.XmlDebugger/XDev.IBatisNet.XmlDebugger.csproj
+  APP_NAME: xDev iBATIS XML Debugger
+  APP_EXECUTABLE: XDev.IBatisNet.XmlDebugger
+
+jobs:
+  version:
+    name: Resolve Version
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.resolve.outputs.version }}
+      macBundleVersion: ${{ steps.resolve.outputs.macBundleVersion }}
+    steps:
+      - name: Resolve desktop version
+        id: resolve
+        shell: pwsh
+        run: |
+          $version = "${{ github.event.inputs.version }}"
+          if ([string]::IsNullOrWhiteSpace($version)) {
+            if ("${{ github.ref }}" -like "refs/tags/xml-debugger-v*") {
+              $version = "${{ github.ref_name }}".Substring("xml-debugger-v".Length)
+            } else {
+              $version = "0.1.${{ github.run_number }}"
+            }
+          }
+
+          $bundleVersion = [regex]::Match($version, '^\d+(\.\d+){0,2}').Value
+          if ([string]::IsNullOrWhiteSpace($bundleVersion)) {
+            $bundleVersion = "0.1.${{ github.run_number }}"
+          }
+
+          "version=$version" >> $env:GITHUB_OUTPUT
+          "macBundleVersion=$bundleVersion" >> $env:GITHUB_OUTPUT
+
+  windows:
+    name: Windows ${{ matrix.rid }}
+    runs-on: windows-latest
+    needs: version
+    strategy:
+      fail-fast: false
+      matrix:
+        rid:
+          - win-x64
+          - win-arm64
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Publish self-contained app
+        shell: pwsh
+        run: |
+          $publishDir = Join-Path $PWD "artifacts\publish\${{ matrix.rid }}"
+          dotnet publish "$env:PROJECT_PATH" `
+            -c Release `
+            -r "${{ matrix.rid }}" `
+            --self-contained true `
+            /p:PublishSingleFile=true `
+            /p:IncludeNativeLibrariesForSelfExtract=true `
+            /p:DebugType=embedded `
+            /p:Version="${{ needs.version.outputs.version }}" `
+            -o "$publishDir"
+
+          Get-ChildItem $publishDir -Filter *.pdb -Recurse | Remove-Item -Force
+          Compress-Archive `
+            -Path "$publishDir\*" `
+            -DestinationPath "artifacts\xDev.IBatisNet.XmlDebugger-${{ needs.version.outputs.version }}-${{ matrix.rid }}-portable.zip" `
+            -Force
+
+      - name: Install NSIS
+        run: choco install nsis -y --no-progress
+
+      - name: Build Windows installer
+        shell: pwsh
+        run: |
+          $publishDir = Join-Path $PWD "artifacts\publish\${{ matrix.rid }}"
+          $outputFile = Join-Path $PWD "artifacts\xDev.IBatisNet.XmlDebugger-${{ needs.version.outputs.version }}-${{ matrix.rid }}-Setup.exe"
+          $makensis = "${env:ProgramFiles(x86)}\NSIS\makensis.exe"
+          if (-not (Test-Path $makensis)) {
+            $makensis = "$env:ProgramFiles\NSIS\makensis.exe"
+          }
+
+          & $makensis `
+            "/DAPP_VERSION=${{ needs.version.outputs.version }}" `
+            "/DARCH=${{ matrix.rid }}" `
+            "/DPUBLISH_DIR=$publishDir" `
+            "/DOUTPUT_FILE=$outputFile" `
+            "tools\XDev.IBatisNet.XmlDebugger\packaging\windows\xdev-ibatis-xml-debugger.nsi"
+
+      - name: Upload Windows artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: xdev-ibatis-xml-debugger-${{ needs.version.outputs.version }}-${{ matrix.rid }}
+          path: |
+            artifacts/*.zip
+            artifacts/*.exe
+
+  macos:
+    name: macOS ${{ matrix.rid }}
+    runs-on: macos-latest
+    needs: version
+    strategy:
+      fail-fast: false
+      matrix:
+        rid:
+          - osx-x64
+          - osx-arm64
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Publish app bundle and DMG
+        shell: bash
+        env:
+          VERSION: ${{ needs.version.outputs.version }}
+          MAC_BUNDLE_VERSION: ${{ needs.version.outputs.macBundleVersion }}
+          RID: ${{ matrix.rid }}
+        run: |
+          set -euo pipefail
+
+          publish_dir="$PWD/artifacts/publish/$RID"
+          app_dir="$PWD/artifacts/app/${APP_NAME}.app"
+
+          dotnet publish "$PROJECT_PATH" \
+            -c Release \
+            -r "$RID" \
+            --self-contained true \
+            -p:PublishSingleFile=true \
+            -p:IncludeNativeLibrariesForSelfExtract=true \
+            -p:DebugType=embedded \
+            -p:Version="$VERSION" \
+            -o "$publish_dir"
+
+          mkdir -p "$app_dir/Contents/MacOS" "$app_dir/Contents/Resources"
+          cp -R "$publish_dir/"* "$app_dir/Contents/MacOS/"
+          chmod +x "$app_dir/Contents/MacOS/$APP_EXECUTABLE"
+
+          cat > "$app_dir/Contents/Info.plist" <<PLIST
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>CFBundleDisplayName</key>
+            <string>${APP_NAME}</string>
+            <key>CFBundleExecutable</key>
+            <string>${APP_EXECUTABLE}</string>
+            <key>CFBundleIdentifier</key>
+            <string>com.xdev.ibatisnet.xmldebugger</string>
+            <key>CFBundleName</key>
+            <string>${APP_NAME}</string>
+            <key>CFBundlePackageType</key>
+            <string>APPL</string>
+            <key>CFBundleShortVersionString</key>
+            <string>${MAC_BUNDLE_VERSION}</string>
+            <key>CFBundleVersion</key>
+            <string>${{ github.run_number }}</string>
+            <key>LSMinimumSystemVersion</key>
+            <string>11.0</string>
+            <key>NSHighResolutionCapable</key>
+            <true/>
+          </dict>
+          </plist>
+          PLIST
+
+          ditto -c -k --keepParent "$app_dir" "artifacts/xDev.IBatisNet.XmlDebugger-${VERSION}-${RID}.app.zip"
+          hdiutil create \
+            -volname "$APP_NAME" \
+            -srcfolder "$app_dir" \
+            -ov \
+            -format UDZO \
+            "artifacts/xDev.IBatisNet.XmlDebugger-${VERSION}-${RID}.dmg"
+
+      - name: Upload macOS artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: xdev-ibatis-xml-debugger-${{ needs.version.outputs.version }}-${{ matrix.rid }}
+          path: |
+            artifacts/*.zip
+            artifacts/*.dmg
+
+  linux:
+    name: Linux ${{ matrix.rid }}
+    runs-on: ubuntu-latest
+    needs: version
+    strategy:
+      fail-fast: false
+      matrix:
+        rid:
+          - linux-x64
+          - linux-arm64
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Publish portable app
+        shell: bash
+        env:
+          VERSION: ${{ needs.version.outputs.version }}
+          RID: ${{ matrix.rid }}
+        run: |
+          set -euo pipefail
+
+          publish_dir="$PWD/artifacts/publish/$RID"
+          dotnet publish "$PROJECT_PATH" \
+            -c Release \
+            -r "$RID" \
+            --self-contained true \
+            -p:PublishSingleFile=true \
+            -p:IncludeNativeLibrariesForSelfExtract=true \
+            -p:DebugType=embedded \
+            -p:Version="$VERSION" \
+            -o "$publish_dir"
+
+          tar -C "$publish_dir" -czf "artifacts/xDev.IBatisNet.XmlDebugger-${VERSION}-${RID}.tar.gz" .
+
+      - name: Upload Linux artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: xdev-ibatis-xml-debugger-${{ needs.version.outputs.version }}-${{ matrix.rid }}
+          path: artifacts/*.tar.gz

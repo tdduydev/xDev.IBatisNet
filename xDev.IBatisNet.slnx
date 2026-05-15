@@ -8,4 +8,7 @@
   <Folder Name="/IBatisNet.DataMapper/">
     <Project Path="IBatisNet.DataMapper/IBatisNet.DataMapper.Net10.csproj" />
   </Folder>
+  <Folder Name="/tools/">
+    <Project Path="tools/XDev.IBatisNet.XmlDebugger/XDev.IBatisNet.XmlDebugger.csproj" />
+  </Folder>
 </Solution>
