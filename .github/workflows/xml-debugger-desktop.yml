@@ -120,14 +120,16 @@ jobs:
 
   macos:
     name: macOS ${{ matrix.rid }}
-    runs-on: macos-latest
+    runs-on: ${{ matrix.os }}
     needs: version
     strategy:
       fail-fast: false
       matrix:
-        rid:
-          - osx-x64
-          - osx-arm64
+        include:
+          - rid: osx-x64
+            os: macos-13
+          - rid: osx-arm64
+            os: macos-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -194,6 +196,7 @@ jobs:
           hdiutil create \
             -volname "$APP_NAME" \
             -srcfolder "$app_dir" \
+            -size 512m \
             -ov \
             -format UDZO \
             "artifacts/xDev.IBatisNet.XmlDebugger-${VERSION}-${RID}.dmg"
