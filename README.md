@@ -47,6 +47,8 @@ Expected .NET 10 release assemblies:
 - `IBatisNet.DataMapper\bin\Release\net10.0\IBatisNet.DataMapper.dll`
 - `IBatisNet.Common.Logging.Log4Net\bin\Release\net10.0\IBatisNet.Common.Logging.Log4Net.dll`
 
+CI also builds the legacy solution as .NET Framework 4.8 for package output.
+
 ## .NET 10 Notes
 
 - `System.Web` session stores are excluded from the .NET 10 build.
@@ -61,6 +63,13 @@ Expected .NET 10 release assemblies:
 `xDev.IBatisNet.nuspec` is the internal package definition for the fork.
 The package name is new, but the contained assemblies intentionally keep their
 legacy names.
+
+GitHub Actions:
+
+- `CI` builds the .NET 10 solution and the legacy solution retargeted as net48.
+- `Publish NuGet` packs and publishes to NuGet.org when a `v*` tag is pushed or
+  when the workflow is run manually.
+- NuGet publishing requires a repository secret named `NUGET_API_KEY`.
 
 ## Original Fork Notes
 

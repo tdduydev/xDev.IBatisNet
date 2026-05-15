@@ -14,7 +14,7 @@
     <copyright>Copyright 2007 The Apache Software Foundation and contributors; modifications copyright tdduydev.</copyright>
     <tags>ibatis ibatisnet datamapper xdev legacy sqlmap</tags>
     <dependencies>
-      <group targetFramework=".NETFramework4.0">
+      <group targetFramework=".NETFramework4.8">
         <dependency id="Castle.Core" version="3.1.0" />
         <dependency id="log4net" version="1.2.11" />
       </group>
@@ -26,12 +26,12 @@
     </dependencies>
   </metadata>
   <files>
-    <file src="IBatisNet.Common\bin\Release\IBatisNet.Common.dll" target="lib\net40" />
-    <file src="IBatisNet.Common\bin\Release\IBatisNet.Common.xml" target="lib\net40" />
-    <file src="IBatisNet.DataMapper\bin\Release\IBatisNet.DataMapper.dll" target="lib\net40" />
-    <file src="IBatisNet.DataMapper\bin\Release\IBatisNet.DataMapper.xml" target="lib\net40" />
-    <file src="IBatisNet.Common.Logging.Log4Net\bin\Release\IBatisNet.Common.Logging.Log4Net.dll" target="lib\net40" />
-    <file src="IBatisNet.Common.Logging.Log4Net\bin\Release\IBatisNet.Common.Logging.Log4Net.xml" target="lib\net40" />
+    <file src="IBatisNet.Common\bin\Release\IBatisNet.Common.dll" target="lib\net48" />
+    <file src="IBatisNet.Common\bin\Release\IBatisNet.Common.xml" target="lib\net48" />
+    <file src="IBatisNet.DataMapper\bin\Release\IBatisNet.DataMapper.dll" target="lib\net48" />
+    <file src="IBatisNet.DataMapper\bin\Release\IBatisNet.DataMapper.xml" target="lib\net48" />
+    <file src="IBatisNet.Common.Logging.Log4Net\bin\Release\IBatisNet.Common.Logging.Log4Net.dll" target="lib\net48" />
+    <file src="IBatisNet.Common.Logging.Log4Net\bin\Release\IBatisNet.Common.Logging.Log4Net.xml" target="lib\net48" />
     <file src="IBatisNet.Common\bin\Release\net10.0\IBatisNet.Common.dll" target="lib\net10.0" />
     <file src="IBatisNet.Common\bin\Release\net10.0\IBatisNet.Common.xml" target="lib\net10.0" />
     <file src="IBatisNet.DataMapper\bin\Release\net10.0\IBatisNet.DataMapper.dll" target="lib\net10.0" />
