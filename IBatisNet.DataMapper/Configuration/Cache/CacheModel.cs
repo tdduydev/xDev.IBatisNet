@@ -32,7 +32,11 @@ using System.Collections.Specialized;
 using System.IO;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+#if NET10_0_OR_GREATER
+using System.Runtime.Serialization;
+#else
 using System.Runtime.Serialization.Formatters.Binary;
+#endif
 using System.Xml.Serialization;
 using IBatisNet.Common.Exceptions;
 using IBatisNet.Common.Logging;
@@ -77,6 +81,21 @@ namespace IBatisNet.DataMapper.Configuration.Cache
 		private int _requests = 0;
 		[NonSerialized]
 		private int _hits = 0;
+#if NET10_0_OR_GREATER
+		private sealed class SerializedCacheEntry
+		{
+			public SerializedCacheEntry(Type objectType, byte[] payload)
+			{
+				ObjectType = objectType;
+				Payload = payload;
+			}
+
+			public Type ObjectType { get; private set; }
+
+			public byte[] Payload { get; private set; }
+		}
+#endif
+
 		[NonSerialized]
 		private string _id = string.Empty;
 		[NonSerialized]
@@ -264,6 +283,33 @@ namespace IBatisNet.DataMapper.Configuration.Cache
 			_controller.Flush();
 		}
 
+#if NET10_0_OR_GREATER
+		private static object DeserializeCacheValue(object value)
+		{
+			SerializedCacheEntry entry = value as SerializedCacheEntry;
+			if (entry == null)
+			{
+				return value;
+			}
+
+			using (MemoryStream stream = new MemoryStream(entry.Payload))
+			{
+				DataContractSerializer serializer = new DataContractSerializer(entry.ObjectType);
+				return serializer.ReadObject(stream);
+			}
+		}
+
+		private static object SerializeCacheValue(object value)
+		{
+			using (MemoryStream stream = new MemoryStream())
+			{
+				DataContractSerializer serializer = new DataContractSerializer(value.GetType());
+				serializer.WriteObject(stream, value);
+				return new SerializedCacheEntry(value.GetType(), stream.ToArray());
+			}
+		}
+#endif
+
 
 		/// <summary>
 		/// Adds an item with the specified key and value into cached data.
@@ -298,10 +344,14 @@ namespace IBatisNet.DataMapper.Configuration.Cache
 				{
 					try
 					{
+#if NET10_0_OR_GREATER
+						value = DeserializeCacheValue(value);
+#else
 						MemoryStream stream = new MemoryStream((byte[]) value);
 						stream.Position = 0;
 						BinaryFormatter formatter = new BinaryFormatter();
 						value = formatter.Deserialize( stream );
+#endif
 					}
 					catch(Exception ex)
 					{
@@ -339,10 +389,14 @@ namespace IBatisNet.DataMapper.Configuration.Cache
 				{
 					try
 					{
+#if NET10_0_OR_GREATER
+						value = SerializeCacheValue(value);
+#else
 						MemoryStream stream = new MemoryStream();
 						BinaryFormatter formatter = new BinaryFormatter();
 						formatter.Serialize(stream, value);
 						value = stream.ToArray();
+#endif
 					}
 					catch(Exception ex)
 					{

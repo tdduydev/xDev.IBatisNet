@@ -37,7 +37,11 @@ namespace IBatisNet.Common.Utilities.Proxy
 	{
 		private static readonly ILog log = LogManager.GetLogger( typeof( ProxyGeneratorFactory ) );
 
+#if NET10_0_OR_GREATER
+		private static ProxyGenerator _generator = new ProxyGenerator();
+#else
 		private static ProxyGenerator _generator = new CachedProxyGenerator();
+#endif
 
 		private ProxyGeneratorFactory()
 		{

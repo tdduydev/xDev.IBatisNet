@@ -3,6 +3,7 @@
 ## Phase 1 - Stabilize The Fork
 
 - Build the inherited VS2010 solution reproducibly on a current Windows machine.
+- Keep the .NET 10 SDK-style solution building with zero warnings.
 - Produce a versioned internal NuGet package.
 - Compare generated binaries against the `IBatisNet.1.0.0` package currently
   used by HIS deployments.
@@ -14,6 +15,8 @@
 - Add tests for dynamic SQL tags used by HIS maps.
 - Add tests for SQL Server and Oracle provider configuration paths.
 - Verify logging behavior with the log4net version used by HIS.
+- Smoke test real HIS `SqlMap.config`, `providers.config`, and representative
+  SQL map XML files on .NET 10.
 - Document binding redirect requirements, if any.
 
 ## Phase 3 - Maintenance Fixes

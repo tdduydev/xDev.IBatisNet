@@ -1,0 +1,37 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <AssemblyName>IBatisNet.DataMapper</AssemblyName>
+    <RootNamespace>IBatisNet.DataMapper</RootNamespace>
+    <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+    <Version>1.6.2</Version>
+    <AssemblyVersion>1.6.2.0</AssemblyVersion>
+    <FileVersion>1.6.2.0</FileVersion>
+    <Company>xDev</Company>
+    <Product>xDev.IBatisNet</Product>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <ImplicitUsings>false</ImplicitUsings>
+    <Nullable>disable</Nullable>
+    <DefineConstants>$(DefineConstants);dotnet2</DefineConstants>
+    <NoWarn>$(NoWarn);1591;1574;1587;0618;0067;SYSLIB0011;SYSLIB0050;SYSLIB0051</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\IBatisNet.Common\IBatisNet.Common.Net10.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Castle.Core" Version="5.2.1" />
+    <PackageReference Include="System.Configuration.ConfigurationManager" Version="10.0.8" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Remove="AssemblyInfo.cs" />
+    <Compile Remove="Commands\EmbedParamsPreparedCommand.cs" />
+    <Compile Remove="Configuration\ResultMapping\IColumn.cs" />
+    <Compile Remove="MappedStatements\ResultStrategy\BaseResultStrategy.cs" />
+    <Compile Remove="SessionStore\CallContextSessionStore.cs" />
+    <Compile Remove="SessionStore\HybridWebThreadSessionStore.cs" />
+    <Compile Remove="SessionStore\WebSessionStore.cs" />
+  </ItemGroup>
+</Project>

@@ -2,21 +2,26 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2013/05/nuspec.xsd">
   <metadata>
     <id>xDev.IBatisNet</id>
-    <version>1.6.2-xdev.0</version>
+    <version>1.6.2-xdev.1</version>
     <title>xDev.IBatisNet</title>
     <authors>tdduydev; Apache iBATIS.NET contributors</authors>
     <owners>tdduydev</owners>
     <license type="expression">Apache-2.0</license>
     <projectUrl>https://github.com/tdduydev/xDev.IBatisNet</projectUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
-    <description>Compatibility-first iBATIS.NET fork for xDev-maintained legacy systems. The package keeps IBatisNet assembly names for existing applications.</description>
-    <releaseNotes>Initial xDev fork package metadata. No public API rename is intended in this baseline.</releaseNotes>
+    <description>Compatibility-first iBATIS.NET fork for xDev-maintained legacy systems. The package keeps IBatisNet assembly names for existing applications and adds .NET 10 assets.</description>
+    <releaseNotes>Add SDK-style .NET 10 projects, AsyncLocal session storage, System.Transactions support, and net10.0 package assets.</releaseNotes>
     <copyright>Copyright 2007 The Apache Software Foundation and contributors; modifications copyright tdduydev.</copyright>
     <tags>ibatis ibatisnet datamapper xdev legacy sqlmap</tags>
     <dependencies>
       <group targetFramework=".NETFramework4.0">
         <dependency id="Castle.Core" version="3.1.0" />
         <dependency id="log4net" version="1.2.11" />
+      </group>
+      <group targetFramework="net10.0">
+        <dependency id="Castle.Core" version="5.2.1" />
+        <dependency id="log4net" version="3.3.1" />
+        <dependency id="System.Configuration.ConfigurationManager" version="10.0.8" />
       </group>
     </dependencies>
   </metadata>
@@ -27,5 +32,11 @@
     <file src="IBatisNet.DataMapper\bin\Release\IBatisNet.DataMapper.xml" target="lib\net40" />
     <file src="IBatisNet.Common.Logging.Log4Net\bin\Release\IBatisNet.Common.Logging.Log4Net.dll" target="lib\net40" />
     <file src="IBatisNet.Common.Logging.Log4Net\bin\Release\IBatisNet.Common.Logging.Log4Net.xml" target="lib\net40" />
+    <file src="IBatisNet.Common\bin\Release\net10.0\IBatisNet.Common.dll" target="lib\net10.0" />
+    <file src="IBatisNet.Common\bin\Release\net10.0\IBatisNet.Common.xml" target="lib\net10.0" />
+    <file src="IBatisNet.DataMapper\bin\Release\net10.0\IBatisNet.DataMapper.dll" target="lib\net10.0" />
+    <file src="IBatisNet.DataMapper\bin\Release\net10.0\IBatisNet.DataMapper.xml" target="lib\net10.0" />
+    <file src="IBatisNet.Common.Logging.Log4Net\bin\Release\net10.0\IBatisNet.Common.Logging.Log4Net.dll" target="lib\net10.0" />
+    <file src="IBatisNet.Common.Logging.Log4Net\bin\Release\net10.0\IBatisNet.Common.Logging.Log4Net.xml" target="lib\net10.0" />
   </files>
 </package>

@@ -1,0 +1,11 @@
+<Solution>
+  <Folder Name="/IBatisNet.Common.Logging.Log4Net/">
+    <Project Path="IBatisNet.Common.Logging.Log4Net/IBatisNet.Common.Logging.Log4Net.Net10.csproj" />
+  </Folder>
+  <Folder Name="/IBatisNet.Common/">
+    <Project Path="IBatisNet.Common/IBatisNet.Common.Net10.csproj" />
+  </Folder>
+  <Folder Name="/IBatisNet.DataMapper/">
+    <Project Path="IBatisNet.DataMapper/IBatisNet.DataMapper.Net10.csproj" />
+  </Folder>
+</Solution>

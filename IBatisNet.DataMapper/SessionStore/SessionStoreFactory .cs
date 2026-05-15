@@ -42,6 +42,9 @@ namespace IBatisNet.DataMapper.SessionStore
         /// <returns></returns>
         static public ISessionStore GetSessionStore(string sqlMapperId)
 		{
+#if NET10_0_OR_GREATER
+			return new CallContextSessionStore(sqlMapperId);
+#else
 			if (System.Web.HttpContext.Current == null)
 			{
                 return new CallContextSessionStore(sqlMapperId);
@@ -50,6 +53,7 @@ namespace IBatisNet.DataMapper.SessionStore
 			{
                 return new WebSessionStore(sqlMapperId);
 			}
+#endif
 		}
 
 	}

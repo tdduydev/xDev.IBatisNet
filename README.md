@@ -29,17 +29,32 @@ place to receive fixes, packaging, and modernization work.
 
 ## Build
 
-Open or build:
+Legacy Visual Studio 2010 solution:
 
 ```powershell
 DataMapper.2010.sln
 ```
 
-Expected release assemblies:
+.NET 10 SDK-style solution:
 
-- `IBatisNet.Common\bin\Release\IBatisNet.Common.dll`
-- `IBatisNet.DataMapper\bin\Release\IBatisNet.DataMapper.dll`
-- `IBatisNet.Common.Logging.Log4Net\bin\Release\IBatisNet.Common.Logging.Log4Net.dll`
+```powershell
+dotnet build xDev.IBatisNet.slnx -c Release
+```
+
+Expected .NET 10 release assemblies:
+
+- `IBatisNet.Common\bin\Release\net10.0\IBatisNet.Common.dll`
+- `IBatisNet.DataMapper\bin\Release\net10.0\IBatisNet.DataMapper.dll`
+- `IBatisNet.Common.Logging.Log4Net\bin\Release\net10.0\IBatisNet.Common.Logging.Log4Net.dll`
+
+## .NET 10 Notes
+
+- `System.Web` session stores are excluded from the .NET 10 build.
+- Remoting `CallContext` is replaced with an `AsyncLocal` session store.
+- COM+ `System.EnterpriseServices` transactions are replaced with
+  `System.Transactions.TransactionScope`.
+- Serializable cache cloning uses `DataContractSerializer` on .NET 10 instead
+  of `BinaryFormatter`.
 
 ## Packaging
 

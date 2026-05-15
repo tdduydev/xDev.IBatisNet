@@ -51,7 +51,11 @@ namespace IBatisNet.Common.Utilities.Objects
             assemblyName.Name = "iBATIS.EmitFactory" + HashCodeProvider.GetIdentityHashCode(this).ToString();
 
 			// Create a new assembly with one module
+#if NET10_0_OR_GREATER
+			AssemblyBuilder _assemblyBuilder = AssemblyBuilder.DefineDynamicAssembly(assemblyName, AssemblyBuilderAccess.Run);
+#else
 			AssemblyBuilder _assemblyBuilder = AppDomain.CurrentDomain.DefineDynamicAssembly(assemblyName, AssemblyBuilderAccess.Run);
+#endif
 			_moduleBuilder = _assemblyBuilder.DefineDynamicModule(assemblyName.Name + ".dll");
 		}
 

@@ -30,7 +30,9 @@ using System;
 using System.Collections.Specialized;
 using System.IO;
 using System.Reflection;
+#if !NET10_0_OR_GREATER
 using System.Security.Permissions;
+#endif
 using System.Xml;
 using IBatisNet.Common.Exceptions;
 using IBatisNet.Common.Logging;
@@ -180,6 +182,30 @@ namespace IBatisNet.Common.Utilities
 		/// </returns>
 		public static bool FileExists(string filePath)
 		{
+#if NET10_0_OR_GREATER
+			try
+			{
+				using (File.Open(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+				{
+					return true;
+				}
+			}
+			catch (FileNotFoundException)
+			{
+				return false;
+			}
+			catch (DirectoryNotFoundException)
+			{
+				return false;
+			}
+			catch (UnauthorizedAccessException e)
+			{
+				throw new ConfigurationException(
+					string.Format("iBATIS doesn't have the right to read the config file \"{0}\". Cause : {1}",
+					filePath,
+					e.Message), e);
+			}
+#else
 			if (File.Exists(filePath) )
 			{
 				// true if the caller has the required permissions and path contains the name of an existing file; 
@@ -215,6 +241,7 @@ namespace IBatisNet.Common.Utilities
 
 				return false;
 			}
+#endif
 		}
 
 
