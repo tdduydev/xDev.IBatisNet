@@ -1,18 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <package xmlns="http://schemas.microsoft.com/packaging/2013/05/nuspec.xsd">
   <metadata>
-    <id>EHospital.IBatisNet</id>
-    <version>1.6.2-ehospital.0</version>
-    <title>EHospital.IBatisNet</title>
+    <id>xDev.IBatisNet</id>
+    <version>1.6.2-xdev.0</version>
+    <title>xDev.IBatisNet</title>
     <authors>tdduydev; Apache iBATIS.NET contributors</authors>
     <owners>tdduydev</owners>
     <license type="expression">Apache-2.0</license>
-    <projectUrl>https://github.com/tdduydev/EHospital.IBatisNet</projectUrl>
+    <projectUrl>https://github.com/tdduydev/xDev.IBatisNet</projectUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
-    <description>Compatibility-first iBATIS.NET fork for eHospital legacy systems. The package keeps IBatisNet assembly names for existing applications.</description>
-    <releaseNotes>Initial eHospital fork package metadata. No public API rename is intended in this baseline.</releaseNotes>
+    <description>Compatibility-first iBATIS.NET fork for xDev-maintained legacy systems. The package keeps IBatisNet assembly names for existing applications.</description>
+    <releaseNotes>Initial xDev fork package metadata. No public API rename is intended in this baseline.</releaseNotes>
     <copyright>Copyright 2007 The Apache Software Foundation and contributors; modifications copyright tdduydev.</copyright>
-    <tags>ibatis ibatisnet datamapper ehospital legacy sqlmap</tags>
+    <tags>ibatis ibatisnet datamapper xdev legacy sqlmap</tags>
     <dependencies>
       <group targetFramework=".NETFramework4.0">
         <dependency id="Castle.Core" version="3.1.0" />

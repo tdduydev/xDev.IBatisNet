@@ -1,11 +1,11 @@
-# EHospital.IBatisNet
+# xDev.IBatisNet
 
-Compatibility-first iBATIS.NET fork for eHospital legacy systems.
+Compatibility-first iBATIS.NET fork for xDev-maintained legacy systems.
 
 This repository is a maintained fork of `beginor/iBATIS_2010`, which is based on
 Apache iBATIS.NET DataMapper 1.6.2 and updated for .NET Framework 4.0.
 
-The goal is deliberately practical: keep old eHospital SQL map files,
+The goal is deliberately practical: keep old HIS SQL map files,
 configuration files, and `IBatisNet.*` APIs working while giving the project a
 place to receive fixes, packaging, and modernization work.
 
@@ -24,7 +24,7 @@ place to receive fixes, packaging, and modernization work.
 - Source baseline: iBATIS.NET DataMapper 1.6.2.
 - Framework target: .NET Framework 4.0.
 - Known upstream note: original fork was only tested with MSSQL SqlClient.
-- eHospital target: replace the legacy `IBatisNet` NuGet/package reference
+- HIS target: replace the legacy `IBatisNet` NuGet/package reference
   without forcing application-level SQL map changes.
 
 ## Build
@@ -43,7 +43,7 @@ Expected release assemblies:
 
 ## Packaging
 
-`EHospital.IBatisNet.nuspec` is the internal package definition for the fork.
+`xDev.IBatisNet.nuspec` is the internal package definition for the fork.
 The package name is new, but the contained assemblies intentionally keep their
 legacy names.
 

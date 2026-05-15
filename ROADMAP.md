@@ -1,15 +1,15 @@
-# EHospital.IBatisNet Roadmap
+# xDev.IBatisNet Roadmap
 
 ## Phase 1 - Stabilize The Fork
 
 - Build the inherited VS2010 solution reproducibly on a current Windows machine.
 - Produce a versioned internal NuGet package.
 - Compare generated binaries against the `IBatisNet.1.0.0` package currently
-  used by eHospital.
+  used by HIS deployments.
 - Run a smoke test with representative HIS `SqlMap.config` and SQL map XML
   files.
 
-## Phase 2 - eHospital Compatibility
+## Phase 2 - HIS Compatibility
 
 - Add tests for dynamic SQL tags used by HIS maps.
 - Add tests for SQL Server and Oracle provider configuration paths.
