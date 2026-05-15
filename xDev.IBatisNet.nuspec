@@ -8,6 +8,7 @@
     <owners>tdduydev</owners>
     <license type="expression">Apache-2.0</license>
     <projectUrl>https://github.com/tdduydev/xDev.IBatisNet</projectUrl>
+    <repository type="git" url="https://github.com/tdduydev/xDev.IBatisNet" />
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>Compatibility-first iBATIS.NET fork for xDev-maintained legacy systems. The package keeps IBatisNet assembly names for existing applications and adds .NET 10 assets.</description>
     <releaseNotes>Add SDK-style .NET 10 projects, AsyncLocal session storage, System.Transactions support, and net10.0 package assets.</releaseNotes>

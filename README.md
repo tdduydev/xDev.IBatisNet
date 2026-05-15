@@ -67,11 +67,18 @@ legacy names.
 GitHub Actions:
 
 - `CI` builds the .NET 10 solution and the legacy solution retargeted as net48.
-- `CI` also packs and publishes to NuGet.org when a `v*` tag is pushed.
-- `CI` packs and publishes to the NuGet test gallery when a `test-v*` tag is
+- `CI` automatically packs and publishes to GitHub Packages on pushes to
+  `master` using an auto-generated prerelease version.
+- `CI` packs and publishes to NuGet.org and GitHub Packages when a `v*` tag is
   pushed.
+- `CI` packs and publishes to the NuGet test gallery when a `test-v*` tag is
+  pushed. The same package is also published to GitHub Packages.
+- Manual workflow runs can publish to GitHub Packages, NuGet test, NuGet.org, or
+  both a NuGet feed and GitHub Packages. Leave the package version blank to use
+  the auto-generated version.
 - NuGet.org publishing requires a repository secret named `NUGET_API_KEY`.
 - NuGet test publishing requires a repository secret named `NUGET_TEST_API_KEY`.
+- GitHub Packages publishing uses the workflow `GITHUB_TOKEN`.
 
 ## Original Fork Notes
 
