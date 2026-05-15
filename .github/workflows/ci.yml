@@ -21,10 +21,10 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup .NET 10
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v5
         with:
           dotnet-version: 10.0.x
 
@@ -38,7 +38,7 @@ jobs:
         run: dotnet msbuild DataMapper.2010.sln /p:Configuration=Release /p:TargetFrameworkVersion=v4.8 /v:minimal
 
       - name: Upload build outputs
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: xDev.IBatisNet-binaries
           path: |
@@ -48,7 +48,7 @@ jobs:
 
       - name: Setup NuGet
         if: startsWith(github.ref, 'refs/tags/v')
-        uses: NuGet/setup-nuget@v2
+        uses: NuGet/setup-nuget@v4
 
       - name: Resolve package version
         if: startsWith(github.ref, 'refs/tags/v')
@@ -73,7 +73,7 @@ jobs:
 
       - name: Upload NuGet package artifact
         if: startsWith(github.ref, 'refs/tags/v')
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: xDev.IBatisNet-${{ steps.version.outputs.packageVersion }}
           path: artifacts/*.nupkg
