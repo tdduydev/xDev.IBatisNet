@@ -120,16 +120,14 @@ jobs:
 
   macos:
     name: macOS ${{ matrix.rid }}
-    runs-on: ${{ matrix.os }}
+    runs-on: macos-latest
     needs: version
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - rid: osx-x64
-            os: macos-13
-          - rid: osx-arm64
-            os: macos-latest
+        rid:
+          - osx-x64
+          - osx-arm64
     steps:
       - name: Checkout
         uses: actions/checkout@v6
