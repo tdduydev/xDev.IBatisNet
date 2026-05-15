@@ -7,6 +7,8 @@
     <Version>1.6.2</Version>
     <AssemblyVersion>1.6.2.0</AssemblyVersion>
     <FileVersion>1.6.2.0</FileVersion>
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>..\AssemblyKey.snk</AssemblyOriginatorKeyFile>
     <Company>xDev</Company>
     <Product>xDev.IBatisNet</Product>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>

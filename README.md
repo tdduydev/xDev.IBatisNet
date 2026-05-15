@@ -1,9 +1,9 @@
 # xDev.IBatisNet
 
-Compatibility-first iBATIS.NET fork for xDev-maintained legacy systems.
+Compatibility-first iBATIS.NET package for xDev-maintained legacy systems.
 
-This repository is a maintained fork of `beginor/iBATIS_2010`, which is based on
-Apache iBATIS.NET DataMapper 1.6.2 and updated for .NET Framework 4.0.
+This repository is an xDev-maintained continuation of Apache iBATIS.NET
+DataMapper 1.6.2 for current xDev systems.
 
 The goal is deliberately practical: keep old HIS SQL map files,
 configuration files, and `IBatisNet.*` APIs working while giving the project a
@@ -17,13 +17,15 @@ place to receive fixes, packaging, and modernization work.
 - Keep XML formats compatible with existing `SqlMap.config`, `providers.config`,
   `SQLMaps/*.xml`, and `OracleMaps/*.xml` files.
 - Prefer small, testable fixes over broad rewrites.
-- Document behavior changes before consuming this fork from HIS applications.
+- Document behavior changes before consuming this package from HIS applications.
 
 ## Current Baseline
 
 - Source baseline: iBATIS.NET DataMapper 1.6.2.
-- Framework target: .NET Framework 4.0.
-- Known upstream note: original fork was only tested with MSSQL SqlClient.
+- Legacy package assets: .NET Framework 4.0, 4.5.2, 4.7.2, and 4.8.
+- Modern package assets: .NET 10.
+- Known baseline note: the inherited code path was only tested with MSSQL
+  SqlClient before xDev maintenance.
 - HIS target: replace the legacy `IBatisNet` NuGet/package reference
   without forcing application-level SQL map changes.
 
@@ -51,7 +53,13 @@ Expected .NET 10 release assemblies:
 - `IBatisNet.DataMapper\bin\Release\net10.0\IBatisNet.DataMapper.dll`
 - `IBatisNet.Common.Logging.Log4Net\bin\Release\net10.0\IBatisNet.Common.Logging.Log4Net.dll`
 
-CI also builds the legacy solution as .NET Framework 4.8 for package output.
+CI builds the legacy solution as a .NET Framework 4.0 compatibility asset and
+packs it under `net40`, `net452`, `net472`, and `net48` so existing HIS
+projects can install the package without retargeting first.
+The legacy package assets intentionally mirror the old HIS package surface:
+`IBatisNet.Common` and `IBatisNet.DataMapper`. They do not pull `log4net`, so
+existing application logging packages remain under the host application's
+control.
 
 ## .NET 10 Notes
 
@@ -64,13 +72,14 @@ CI also builds the legacy solution as .NET Framework 4.8 for package output.
 
 ## Packaging
 
-`xDev.IBatisNet.nuspec` is the internal package definition for the fork.
+`xDev.IBatisNet.nuspec` is the internal package definition.
 The package name is new, but the contained assemblies intentionally keep their
 legacy names.
 
 GitHub Actions:
 
-- `CI` builds the .NET 10 solution and the legacy solution retargeted as net48.
+- `CI` builds the .NET 10 solution and the legacy .NET Framework compatibility
+  solution.
 - `CI` automatically packs and publishes to GitHub Packages on pushes to
   `master` using an auto-generated prerelease version.
 - `CI` packs and publishes to NuGet.org and GitHub Packages when a `v*` tag is
@@ -84,9 +93,9 @@ GitHub Actions:
 - NuGet test publishing requires a repository secret named `NUGET_TEST_API_KEY`.
 - GitHub Packages publishing uses the workflow `GITHUB_TOKEN`.
 
-## Original Fork Notes
+## Baseline Notes
 
-The inherited `iBATIS_2010` changes included:
+The inherited legacy changes included:
 
 - Update to Castle.DynamicProxy in Castle.Core.dll v3.1.0 (.NET 4.0 profile).
 - Update to log4net v1.2.11.0 (.NET 4.0 profile).

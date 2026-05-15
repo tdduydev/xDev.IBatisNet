@@ -57,8 +57,21 @@ jobs:
       - name: Build .NET 10 solution
         run: dotnet build xDev.IBatisNet.slnx -c Release --no-restore
 
-      - name: Build legacy .NET Framework solution as net48
-        run: dotnet msbuild DataMapper.2010.sln /p:Configuration=Release /p:TargetFrameworkVersion=v4.8 /v:minimal
+      - name: Restore .NET Framework 4.0 reference assemblies
+        id: netfx40
+        shell: pwsh
+        run: |
+          $projDir = Join-Path $env:RUNNER_TEMP "netfx-reference-assemblies"
+          dotnet new classlib -n ReferenceAssemblyRestore -o $projDir
+          dotnet add "$projDir\ReferenceAssemblyRestore.csproj" package Microsoft.NETFramework.ReferenceAssemblies.net40 --version 1.0.3
+          $refPath = Join-Path $env:USERPROFILE ".nuget\packages\microsoft.netframework.referenceassemblies.net40\1.0.3\build\.NETFramework\v4.0"
+          if (-not (Test-Path $refPath)) {
+            throw "Could not find .NET Framework 4.0 reference assemblies at $refPath."
+          }
+          "path=$refPath" >> $env:GITHUB_OUTPUT
+
+      - name: Build legacy .NET Framework compatibility solution
+        run: dotnet msbuild DataMapper.2010.sln /p:Configuration=Release /p:TargetFrameworkVersion=v4.0 /p:FrameworkPathOverride="${{ steps.netfx40.outputs.path }}" /v:minimal
 
       - name: Upload build outputs
         uses: actions/upload-artifact@v7
