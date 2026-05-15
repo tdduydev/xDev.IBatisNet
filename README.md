@@ -35,6 +35,10 @@ Legacy Visual Studio 2010 solution:
 DataMapper.2010.sln
 ```
 
+Visual Studio 2003 project files are preserved with the `.vs2003proj`
+extension so modern dependency scanners do not try to restore them as MSBuild
+projects.
+
 .NET 10 SDK-style solution:
 
 ```powershell
