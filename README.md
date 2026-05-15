@@ -68,7 +68,10 @@ GitHub Actions:
 
 - `CI` builds the .NET 10 solution and the legacy solution retargeted as net48.
 - `CI` also packs and publishes to NuGet.org when a `v*` tag is pushed.
-- NuGet publishing requires a repository secret named `NUGET_API_KEY`.
+- `CI` packs and publishes to the NuGet test gallery when a `test-v*` tag is
+  pushed.
+- NuGet.org publishing requires a repository secret named `NUGET_API_KEY`.
+- NuGet test publishing requires a repository secret named `NUGET_TEST_API_KEY`.
 
 ## Original Fork Notes
 

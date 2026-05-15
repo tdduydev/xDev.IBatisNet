@@ -7,10 +7,25 @@ on:
       - "codex/**"
     tags:
       - "v*"
+      - "test-v*"
   pull_request:
     branches:
       - master
   workflow_dispatch:
+    inputs:
+      publishFeed:
+        description: "Optional package feed to publish after a successful build"
+        required: true
+        default: "none"
+        type: choice
+        options:
+          - "none"
+          - "nuget-test"
+          - "nuget-org"
+      packageVersion:
+        description: "Package version for manual publish, for example 1.6.2-xdev.2"
+        required: false
+        type: string
 
 jobs:
   build:
@@ -18,6 +33,7 @@ jobs:
     runs-on: windows-latest
     env:
       NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+      NUGET_TEST_API_KEY: ${{ secrets.NUGET_TEST_API_KEY }}
 
     steps:
       - name: Checkout
@@ -47,38 +63,72 @@ jobs:
             IBatisNet.Common.Logging.Log4Net/bin/Release/**
 
       - name: Setup NuGet
-        if: startsWith(github.ref, 'refs/tags/v')
+        if: startsWith(github.ref, 'refs/tags/v') || startsWith(github.ref, 'refs/tags/test-v') || (github.event_name == 'workflow_dispatch' && github.event.inputs.publishFeed != 'none')
         uses: NuGet/setup-nuget@v4
 
-      - name: Resolve package version
-        if: startsWith(github.ref, 'refs/tags/v')
-        id: version
+      - name: Resolve package publish target
+        if: startsWith(github.ref, 'refs/tags/v') || startsWith(github.ref, 'refs/tags/test-v') || (github.event_name == 'workflow_dispatch' && github.event.inputs.publishFeed != 'none')
+        id: publish
         shell: pwsh
         run: |
-          $version = "${{ github.ref_name }}"
-          if ($version.StartsWith("v")) {
-            $version = $version.Substring(1)
+          $feed = "${{ github.event.inputs.publishFeed }}"
+          $version = "${{ github.event.inputs.packageVersion }}"
+          $source = ""
+
+          if ("${{ github.ref }}" -like "refs/tags/test-v*") {
+            $feed = "nuget-test"
+            $version = "${{ github.ref_name }}".Substring("test-v".Length)
+          } elseif ("${{ github.ref }}" -like "refs/tags/v*") {
+            $feed = "nuget-org"
+            $version = "${{ github.ref_name }}".Substring("v".Length)
           }
+
+          if ($feed -eq "nuget-test") {
+            $source = "https://apiint.nugettest.org/v3/index.json"
+          } elseif ($feed -eq "nuget-org") {
+            $source = "https://api.nuget.org/v3/index.json"
+          } else {
+            "shouldPublish=false" >> $env:GITHUB_OUTPUT
+            exit 0
+          }
+
           if ([string]::IsNullOrWhiteSpace($version)) {
             throw "Package version is required."
           }
+
+          "shouldPublish=true" >> $env:GITHUB_OUTPUT
+          "feed=$feed" >> $env:GITHUB_OUTPUT
           "packageVersion=$version" >> $env:GITHUB_OUTPUT
+          "source=$source" >> $env:GITHUB_OUTPUT
           $nuspec = Get-Content xDev.IBatisNet.nuspec -Raw
           $nuspec = $nuspec -replace '<version>.*?</version>', "<version>$version</version>"
           Set-Content xDev.IBatisNet.nuspec -Value $nuspec -NoNewline
 
       - name: Pack NuGet package
-        if: startsWith(github.ref, 'refs/tags/v')
+        if: steps.publish.outputs.shouldPublish == 'true'
         run: nuget pack xDev.IBatisNet.nuspec -OutputDirectory artifacts -NoDefaultExcludes
 
       - name: Upload NuGet package artifact
-        if: startsWith(github.ref, 'refs/tags/v')
+        if: steps.publish.outputs.shouldPublish == 'true'
         uses: actions/upload-artifact@v7
         with:
-          name: xDev.IBatisNet-${{ steps.version.outputs.packageVersion }}
+          name: xDev.IBatisNet-${{ steps.publish.outputs.packageVersion }}
           path: artifacts/*.nupkg
 
       - name: Publish to NuGet.org
-        if: startsWith(github.ref, 'refs/tags/v') && env.NUGET_API_KEY != ''
+        if: steps.publish.outputs.feed == 'nuget-org'
         shell: pwsh
-        run: dotnet nuget push "artifacts/*.nupkg" --api-key "$env:NUGET_API_KEY" --source https://api.nuget.org/v3/index.json --skip-duplicate
+        run: |
+          if ([string]::IsNullOrWhiteSpace($env:NUGET_API_KEY)) {
+            throw "Missing GitHub secret NUGET_API_KEY."
+          }
+          dotnet nuget push "artifacts/*.nupkg" --api-key "$env:NUGET_API_KEY" --source "${{ steps.publish.outputs.source }}" --skip-duplicate
+
+      - name: Publish to NuGet test
+        if: steps.publish.outputs.feed == 'nuget-test'
+        shell: pwsh
+        run: |
+          if ([string]::IsNullOrWhiteSpace($env:NUGET_TEST_API_KEY)) {
+            throw "Missing GitHub secret NUGET_TEST_API_KEY."
+          }
+          dotnet nuget push "artifacts/*.nupkg" --api-key "$env:NUGET_TEST_API_KEY" --source "${{ steps.publish.outputs.source }}" --skip-duplicate
