@@ -67,8 +67,7 @@ legacy names.
 GitHub Actions:
 
 - `CI` builds the .NET 10 solution and the legacy solution retargeted as net48.
-- `Publish NuGet` packs and publishes to NuGet.org when a `v*` tag is pushed or
-  when the workflow is run manually.
+- `CI` also packs and publishes to NuGet.org when a `v*` tag is pushed.
 - NuGet publishing requires a repository secret named `NUGET_API_KEY`.
 
 ## Original Fork Notes
