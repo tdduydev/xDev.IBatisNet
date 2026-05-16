@@ -237,13 +237,28 @@ jobs:
           PLIST
 
           ditto -c -k --keepParent "$app_dir" "artifacts/xDev.IBatisNet.XmlDebugger-${VERSION}-${RID}.app.zip"
-          hdiutil create \
-            -volname "$APP_NAME" \
-            -srcfolder "$app_dir" \
-            -size 512m \
-            -ov \
-            -format UDZO \
-            "artifacts/xDev.IBatisNet.XmlDebugger-${VERSION}-${RID}.dmg"
+          volume_name="$APP_NAME $RID"
+          dmg_path="artifacts/xDev.IBatisNet.XmlDebugger-${VERSION}-${RID}.dmg"
+          hdiutil detach "/Volumes/$volume_name" -force >/dev/null 2>&1 || true
+
+          for attempt in 1 2 3; do
+            if hdiutil create \
+              -volname "$volume_name" \
+              -srcfolder "$app_dir" \
+              -size 512m \
+              -ov \
+              -format UDZO \
+              "$dmg_path"; then
+              break
+            fi
+
+            if [ "$attempt" -eq 3 ]; then
+              exit 1
+            fi
+
+            hdiutil detach "/Volumes/$volume_name" -force >/dev/null 2>&1 || true
+            sleep $((attempt * 5))
+          done
 
       - name: Upload macOS artifacts
         uses: actions/upload-artifact@v7
