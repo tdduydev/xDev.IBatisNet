@@ -35,6 +35,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
 
       - name: Resolve desktop version
         id: resolve
@@ -45,16 +47,21 @@ jobs:
           function Get-AutoPackageVersion {
             $nuspecContent = Get-Content xDev.IBatisNet.nuspec -Raw
             $match = [regex]::Match($nuspecContent, '<version>(?<version>[^<]+)</version>')
+            $commitCount = git rev-list --count HEAD
+            if ([string]::IsNullOrWhiteSpace($commitCount)) {
+              $commitCount = "${{ github.run_number }}"
+            }
+
             if (-not $match.Success) {
-              return "0.1.${{ github.run_number }}"
+              return "0.1.$commitCount"
             }
 
             $baseVersion = $match.Groups["version"].Value
             if ($baseVersion.Contains("-") -and $baseVersion -match '^(?<prefix>.+)\.\d+$') {
-              return "$($Matches.prefix).${{ github.run_number }}"
+              return "$($Matches.prefix).$commitCount"
             }
 
-            return "$baseVersion-ci.${{ github.run_number }}"
+            return "$baseVersion-ci.$commitCount"
           }
 
           if ([string]::IsNullOrWhiteSpace($version)) {

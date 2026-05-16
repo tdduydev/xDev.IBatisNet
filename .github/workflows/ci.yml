@@ -125,12 +125,17 @@ jobs:
               throw "Could not find package version in xDev.IBatisNet.nuspec."
             }
 
-            $baseVersion = $match.Groups["version"].Value
-            if ($baseVersion.Contains("-") -and $baseVersion -match '^(?<prefix>.+)\.\d+$') {
-              return "$($Matches.prefix).${{ github.run_number }}"
+            $commitCount = git rev-list --count HEAD
+            if ([string]::IsNullOrWhiteSpace($commitCount)) {
+              $commitCount = "${{ github.run_number }}"
             }
 
-            return "$baseVersion-ci.${{ github.run_number }}"
+            $baseVersion = $match.Groups["version"].Value
+            if ($baseVersion.Contains("-") -and $baseVersion -match '^(?<prefix>.+)\.\d+$') {
+              return "$($Matches.prefix).$commitCount"
+            }
+
+            return "$baseVersion-ci.$commitCount"
           }
 
           if ("${{ github.ref }}" -like "refs/tags/test-v*") {
