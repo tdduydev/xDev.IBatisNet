@@ -100,11 +100,35 @@ jobs:
       - name: Publish XML Debugger portable build
         shell: pwsh
         run: |
-          $debuggerVersion = "0.0.${{ github.run_number }}-ci"
-          if ("${{ github.ref }}" -like "refs/tags/test-v*") {
+          function Get-AutoPackageVersion {
+            $nuspecContent = Get-Content xDev.IBatisNet.nuspec -Raw
+            $match = [regex]::Match($nuspecContent, '<version>(?<version>[^<]+)</version>')
+            if (-not $match.Success) {
+              return "0.0.${{ github.run_number }}-ci"
+            }
+
+            $commitCount = git rev-list --count HEAD
+            if ([string]::IsNullOrWhiteSpace($commitCount)) {
+              $commitCount = "${{ github.run_number }}"
+            }
+
+            $baseVersion = $match.Groups["version"].Value
+            if ($baseVersion.Contains("-") -and $baseVersion -match '^(?<prefix>.+)\.\d+$') {
+              return "$($Matches.prefix).$commitCount"
+            }
+
+            return "$baseVersion-ci.$commitCount"
+          }
+
+          $debuggerVersion = "${{ github.event.inputs.packageVersion }}"
+          if ([string]::IsNullOrWhiteSpace($debuggerVersion) -and "${{ github.ref }}" -like "refs/tags/test-v*") {
             $debuggerVersion = "${{ github.ref_name }}".Substring("test-v".Length)
-          } elseif ("${{ github.ref }}" -like "refs/tags/v*") {
+          } elseif ([string]::IsNullOrWhiteSpace($debuggerVersion) -and "${{ github.ref }}" -like "refs/tags/v*") {
             $debuggerVersion = "${{ github.ref_name }}".Substring("v".Length)
+          }
+
+          if ([string]::IsNullOrWhiteSpace($debuggerVersion)) {
+            $debuggerVersion = Get-AutoPackageVersion
           }
 
           $debuggerVersion = $debuggerVersion -replace '[^0-9A-Za-z._-]', '-'
