@@ -31,7 +31,7 @@ on:
         type: string
 
 permissions:
-  contents: read
+  contents: write
   packages: write
 
 jobs:
@@ -188,12 +188,23 @@ jobs:
           "publishNuGetTest=$($publishNuGetTest.ToString().ToLowerInvariant())" >> $env:GITHUB_OUTPUT
           "publishNuGetOrg=$($publishNuGetOrg.ToString().ToLowerInvariant())" >> $env:GITHUB_OUTPUT
           "packageVersion=$version" >> $env:GITHUB_OUTPUT
+          if ("${{ github.ref }}" -like "refs/tags/v*" -or "${{ github.ref }}" -like "refs/tags/test-v*") {
+            $releaseTag = "${{ github.ref_name }}"
+            $isPrerelease = $releaseTag.StartsWith("test-v") -or $version.Contains("-")
+            "releaseTag=$releaseTag" >> $env:GITHUB_OUTPUT
+            "isPrerelease=$($isPrerelease.ToString().ToLowerInvariant())" >> $env:GITHUB_OUTPUT
+          } else {
+            "releaseTag=" >> $env:GITHUB_OUTPUT
+            "isPrerelease=false" >> $env:GITHUB_OUTPUT
+          }
+
           $nuspec = Get-Content xDev.IBatisNet.nuspec -Raw
           $nuspec = $nuspec -replace '<version>.*?</version>', "<version>$version</version>"
           Set-Content xDev.IBatisNet.nuspec -Value $nuspec -NoNewline
 
       - name: Generate NuGet release notes
         if: steps.publish.outputs.shouldPublish == 'true'
+        id: notes
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force artifacts | Out-Null
@@ -201,15 +212,16 @@ jobs:
           $notesPath = "artifacts\xDev.IBatisNet-$version-release-notes.md"
           $previousTag = $null
           try {
-            $previousTag = git describe --tags --abbrev=0 "${{ github.sha }}^" 2>$null
+            $previousTag = git describe --tags --abbrev=0 --match "v*" --match "test-v*" "${{ github.sha }}^" 2>$null
           } catch {
             $previousTag = $null
           }
 
           $range = if ([string]::IsNullOrWhiteSpace($previousTag)) { "${{ github.sha }}" } else { "$previousTag..${{ github.sha }}" }
           $changes = git log --pretty=format:"- %s (`%h`)" $range
-          if ([string]::IsNullOrWhiteSpace($changes)) {
-            $changes = "- No commit details available."
+          $changesText = $changes -join "`n"
+          if ([string]::IsNullOrWhiteSpace($changesText)) {
+            $changesText = "- No commit details available."
           }
 
           $feeds = @()
@@ -218,7 +230,7 @@ jobs:
           if ("${{ steps.publish.outputs.publishNuGetOrg }}" -eq "true") { $feeds += "NuGet.org" }
           if ($feeds.Count -eq 0) { $feeds += "artifact only" }
 
-          @"
+          $notes = @"
           # xDev.IBatisNet $version
 
           - Ref: `${{ github.ref_name }}`
@@ -228,8 +240,39 @@ jobs:
 
           ## Changes
 
-          $changes
-          "@ | Set-Content $notesPath -NoNewline
+          $changesText
+          "@
+          $notes = $notes.Trim()
+
+          Set-Content $notesPath -Value $notes -NoNewline
+
+          [xml]$nuspec = Get-Content xDev.IBatisNet.nuspec -Raw
+          $namespace = $nuspec.package.NamespaceURI
+          $ns = New-Object System.Xml.XmlNamespaceManager($nuspec.NameTable)
+          $ns.AddNamespace("n", $namespace)
+          $metadata = $nuspec.SelectSingleNode("/n:package/n:metadata", $ns)
+          if ($null -eq $metadata) {
+            throw "Could not find metadata node in xDev.IBatisNet.nuspec."
+          }
+
+          $releaseNotes = $metadata.SelectSingleNode("n:releaseNotes", $ns)
+          if ($null -eq $releaseNotes) {
+            $releaseNotes = $nuspec.CreateElement("releaseNotes", $namespace)
+            [void]$metadata.AppendChild($releaseNotes)
+          }
+
+          $releaseNotes.InnerText = $notes
+          $settings = New-Object System.Xml.XmlWriterSettings
+          $settings.Indent = $true
+          $settings.Encoding = [System.Text.UTF8Encoding]::new($false)
+          $writer = [System.Xml.XmlWriter]::Create((Resolve-Path xDev.IBatisNet.nuspec).Path, $settings)
+          try {
+            $nuspec.Save($writer)
+          } finally {
+            $writer.Close()
+          }
+
+          "path=$notesPath" >> $env:GITHUB_OUTPUT
 
       - name: Pack NuGet package
         if: steps.publish.outputs.shouldPublish == 'true'
@@ -287,4 +330,37 @@ jobs:
           }
           Get-ChildItem artifacts -Filter *.nupkg | ForEach-Object {
             dotnet nuget push $_.FullName --api-key "$env:NUGET_TEST_API_KEY" --source "https://apiint.nugettest.org/v3/index.json" --skip-duplicate
+          }
+
+      - name: Publish GitHub release for package tags
+        if: steps.publish.outputs.shouldPublish == 'true' && steps.publish.outputs.releaseTag != ''
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $tag = "${{ steps.publish.outputs.releaseTag }}"
+          $version = "${{ steps.publish.outputs.packageVersion }}"
+          $title = "xDev.IBatisNet $version"
+          $notesPath = "${{ steps.notes.outputs.path }}"
+          $assets = Get-ChildItem artifacts -File |
+            Where-Object { $_.Name -like "*.nupkg" -or $_.Name -like "*release-notes.md" } |
+            Sort-Object Name |
+            ForEach-Object { $_.FullName }
+          $isPrerelease = "${{ steps.publish.outputs.isPrerelease }}" -eq "true"
+
+          gh release view $tag *> $null
+          if ($LASTEXITCODE -eq 0) {
+            gh release edit $tag --title "$title" --notes-file "$notesPath"
+            if ($assets) {
+              gh release upload $tag @assets --clobber
+            }
+          } else {
+            $arguments = @("release", "create", $tag)
+            $arguments += $assets
+            $arguments += @("--title", $title, "--notes-file", $notesPath)
+            if ($isPrerelease) {
+              $arguments += "--prerelease"
+            }
+
+            gh @arguments
           }

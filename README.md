@@ -88,15 +88,38 @@ GitHub Actions:
 - `CI` automatically packs and publishes to GitHub Packages on pushes to
   `master` using an auto-generated prerelease version.
 - `CI` packs and publishes to NuGet.org and GitHub Packages when a `v*` tag is
-  pushed.
+  pushed, then creates or updates the matching GitHub Release.
 - `CI` packs and publishes to the NuGet test gallery when a `test-v*` tag is
-  pushed. The same package is also published to GitHub Packages.
+  pushed. The same package is also published to GitHub Packages and the GitHub
+  Release is marked as a prerelease.
 - Manual workflow runs can publish to GitHub Packages, NuGet test, NuGet.org, or
   both a NuGet feed and GitHub Packages. Leave the package version blank to use
   the auto-generated version.
+- Generated release notes are written into `xDev.IBatisNet.nuspec` before
+  packing, uploaded as an artifact, and reused as the GitHub Release body so the
+  NuGet package metadata and GitHub Release stay in sync.
 - NuGet.org publishing requires a repository secret named `NUGET_API_KEY`.
 - NuGet test publishing requires a repository secret named `NUGET_TEST_API_KEY`.
 - GitHub Packages publishing uses the workflow `GITHUB_TOKEN`.
+
+## Releases
+
+Production releases are driven by tags:
+
+```powershell
+git tag v1.6.2-xdev.10
+git push origin v1.6.2-xdev.10
+```
+
+Test releases use the same version format with a `test-v` prefix:
+
+```powershell
+git tag test-v1.6.2-xdev.10
+git push origin test-v1.6.2-xdev.10
+```
+
+Pushes to `master` continue to publish GitHub Packages with an automatically
+generated prerelease version based on the nuspec base version and commit count.
 
 ## Baseline Notes
 

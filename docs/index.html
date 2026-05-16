@@ -18,6 +18,7 @@
       <nav>
         <a href="#overview">Tổng quan</a>
         <a href="#install">Cài đặt</a>
+        <a href="#releases">Releases</a>
         <a href="#quickstart">Quick start</a>
         <a href="#config">Cấu hình</a>
         <a href="#maps">SQL map XML</a>
@@ -138,6 +139,55 @@
           <div class="notice">
             Nếu ứng dụng cũ đang reference trực tiếp DLL, hãy thay bằng NuGet trước ở môi trường test.
             Việc đổi package không nên đi kèm đổi SQL map trong cùng một lần release lớn.
+          </div>
+        </section>
+
+        <section class="section" id="releases">
+          <h2>Releases</h2>
+          <p class="lead">
+            Bản phát hành package được điều khiển bằng GitHub Actions để version, NuGet package,
+            release note artifact và GitHub Release dùng chung một nguồn dữ liệu.
+          </p>
+
+          <div class="grid two">
+            <div class="card">
+              <h3>Production</h3>
+              <p>
+                Push tag dạng <code>v1.6.2-xdev.10</code> để publish lên NuGet.org và GitHub Packages,
+                sau đó tạo hoặc cập nhật GitHub Release tương ứng.
+              </p>
+              <pre><code>git tag v1.6.2-xdev.10
+git push origin v1.6.2-xdev.10</code></pre>
+            </div>
+
+            <div class="card">
+              <h3>Test prerelease</h3>
+              <p>
+                Push tag dạng <code>test-v1.6.2-xdev.10</code> để publish lên NuGet test gallery
+                và GitHub Packages. GitHub Release sẽ được đánh dấu prerelease.
+              </p>
+              <pre><code>git tag test-v1.6.2-xdev.10
+git push origin test-v1.6.2-xdev.10</code></pre>
+            </div>
+          </div>
+
+          <h3>Tự động tăng version</h3>
+          <p>
+            Khi push vào <code>master</code>, workflow tạo prerelease version từ version nền trong
+            <code>xDev.IBatisNet.nuspec</code> và commit count hiện tại, rồi publish lên GitHub Packages.
+            Khi chạy workflow thủ công, có thể để trống package version để dùng cùng cơ chế tự động.
+          </p>
+
+          <h3>Release notes tự đồng bộ</h3>
+          <ul class="checklist">
+            <li>Workflow sinh release notes từ git history kể từ tag package gần nhất.</li>
+            <li>Nội dung đó được ghi vào <code>&lt;releaseNotes&gt;</code> trong nuspec trước khi pack.</li>
+            <li>Cùng file release notes được upload làm artifact và dùng làm body của GitHub Release.</li>
+          </ul>
+
+          <div class="notice">
+            GitHub Release chỉ được tạo cho tag <code>v*</code> hoặc <code>test-v*</code>. Build từ
+            <code>master</code> vẫn publish package prerelease nhưng không tạo Release mới để tránh làm nhiễu trang Releases.
           </div>
         </section>
 
