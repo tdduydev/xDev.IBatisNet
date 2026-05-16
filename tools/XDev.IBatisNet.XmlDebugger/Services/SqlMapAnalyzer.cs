@@ -99,6 +99,8 @@ public sealed partial class SqlMapAnalyzer
             bool.TryParse(useNamespacesValue, out var parsedUseNamespaces) &&
             parsedUseNamespaces;
 
+        AddConfigurationSecurityDiagnostics(settingValues, configPath, diagnostics);
+
         foreach (var alias in config.Descendants(ns + "typeAlias"))
         {
             aliases.Add(new PropertyItem(Attr(alias, "alias") ?? "(unnamed)", Attr(alias, "type") ?? ""));
@@ -284,6 +286,19 @@ public sealed partial class SqlMapAnalyzer
                 .Where(x => !string.IsNullOrWhiteSpace(x))
                 .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
+            foreach (var cacheModel in doc.Descendants().Where(x => x.Name.LocalName.Equals("cacheModel", StringComparison.OrdinalIgnoreCase)))
+            {
+                var cacheId = QualifyId(Attr(cacheModel, "id") ?? "", mapNamespace, useStatementNamespaces);
+                if (IsTrue(Attr(cacheModel, "serialize")) && IsFalse(Attr(cacheModel, "readOnly")))
+                {
+                    diagnostics.Add(new DiagnosticItem(
+                        "Security",
+                        "Serializable read-write cache cloning can deserialize cached payloads. Avoid serialize=\"true\" with readOnly=\"false\" on legacy targets, or keep cache data fully trusted.",
+                        resolved,
+                        string.IsNullOrWhiteSpace(cacheId) ? Line(cacheModel) : cacheId));
+                }
+            }
+
             foreach (var element in doc.Descendants().Where(x => StatementElementNames.Contains(x.Name.LocalName)))
             {
                 var id = QualifyId(Attr(element, "id") ?? "", mapNamespace, useStatementNamespaces);
@@ -391,6 +406,12 @@ public sealed partial class SqlMapAnalyzer
             return NormalizePath(localFilePath);
         }
 
+        if (IsRemoteUri(resolvedValue))
+        {
+            diagnostics.Add(new DiagnosticItem("Security", "Remote XML resource URIs are not loaded by the analyzer. Keep SqlMap/properties resources local and trusted.", resolvedValue, filePath));
+            return resolvedValue;
+        }
+
         var resolved = resolvedValue
             .Replace('/', Path.DirectorySeparatorChar)
             .Replace('\\', Path.DirectorySeparatorChar);
@@ -418,6 +439,12 @@ public sealed partial class SqlMapAnalyzer
         if (TryGetLocalFilePathFromUri(resolvedValue, out var localFilePath))
         {
             return NormalizePath(localFilePath);
+        }
+
+        if (IsRemoteUri(resolvedValue))
+        {
+            diagnostics.Add(new DiagnosticItem("Security", "Remote XML resource URIs are not loaded by the analyzer. Keep SqlMap/properties resources local and trusted.", resolvedValue, filePath));
+            return resolvedValue;
         }
 
         var resolved = resolvedValue
@@ -531,6 +558,48 @@ public sealed partial class SqlMapAnalyzer
         return false;
     }
 
+    private static bool IsRemoteUri(string value)
+    {
+        return Uri.TryCreate(value, UriKind.Absolute, out var uri) && !uri.IsFile;
+    }
+
+    private static void AddConfigurationSecurityDiagnostics(
+        IReadOnlyDictionary<string, string> settingValues,
+        string configPath,
+        ICollection<DiagnosticItem> diagnostics)
+    {
+        if (settingValues.TryGetValue("useEmbedStatementParams", out var embedValue) && IsTrue(embedValue))
+        {
+            diagnostics.Add(new DiagnosticItem(
+                "Security",
+                "useEmbedStatementParams=true embeds parameter values into SQL text. Prefer prepared #...# parameters and leave this disabled.",
+                configPath,
+                "settings"));
+        }
+
+        if (settingValues.TryGetValue("allowInlineSqlParameters", out var inlineValue) && IsTrue(inlineValue))
+        {
+            diagnostics.Add(new DiagnosticItem(
+                "Security",
+                "allowInlineSqlParameters=true allows raw $...$ SQL substitutions. Use it only with allow-listed identifiers, never with request/user values.",
+                configPath,
+                "settings"));
+        }
+    }
+
+    private static bool IsTrue(string? value)
+    {
+        return bool.TryParse(value, out var result)
+            ? result
+            : string.Equals(value, "1", StringComparison.OrdinalIgnoreCase) ||
+              string.Equals(value, "yes", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool IsFalse(string? value)
+    {
+        return bool.TryParse(value, out var result) && !result;
+    }
+
     private static string Line(XElement element)
     {
         if (element is IXmlLineInfo lineInfo && lineInfo.HasLineInfo())
@@ -559,7 +628,15 @@ public sealed partial class SqlMapAnalyzer
 
                 var key = split[0].Trim();
                 if (key.Contains("password", StringComparison.OrdinalIgnoreCase) ||
-                    key.Equals("pwd", StringComparison.OrdinalIgnoreCase))
+                    key.Equals("pwd", StringComparison.OrdinalIgnoreCase) ||
+                    key.Equals("user id", StringComparison.OrdinalIgnoreCase) ||
+                    key.Equals("uid", StringComparison.OrdinalIgnoreCase) ||
+                    key.Equals("user", StringComparison.OrdinalIgnoreCase) ||
+                    key.Equals("username", StringComparison.OrdinalIgnoreCase) ||
+                    key.Contains("token", StringComparison.OrdinalIgnoreCase) ||
+                    key.Contains("secret", StringComparison.OrdinalIgnoreCase) ||
+                    key.Equals("key", StringComparison.OrdinalIgnoreCase) ||
+                    key.EndsWith(" key", StringComparison.OrdinalIgnoreCase))
                 {
                     return $"{key}=***";
                 }

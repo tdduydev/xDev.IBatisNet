@@ -617,9 +617,13 @@ namespace IBatisNet.DataMapper.Configuration
 #if dotnet2
                 XmlReaderSettings settings = new XmlReaderSettings();
                 settings.ValidationType = ValidationType.Schema;
+                settings.DtdProcessing = DtdProcessing.Prohibit;
+                settings.XmlResolver = null;
+                settings.ValidationEventHandler += new ValidationEventHandler(ValidationCallBack);
 
                 // Create the XmlSchemaSet class.
                 XmlSchemaSet schemas = new XmlSchemaSet();
+                schemas.XmlResolver = null;
                 schemas.Add(schema);
 
                 settings.Schemas = schemas;
@@ -627,10 +631,12 @@ namespace IBatisNet.DataMapper.Configuration
 
 				// Wire up the call back.  The ValidationEvent is fired when the
 				// XmlValidatingReader hits an issue validating a section of the xml
-                settings.ValidationEventHandler += new ValidationEventHandler(ValidationCallBack);
 #else
-                validatingReader = new XmlValidatingReader(new XmlTextReader(new StringReader(section.OuterXml)));
+                XmlTextReader textReader = new XmlTextReader(new StringReader(section.OuterXml));
+                textReader.XmlResolver = null;
+                validatingReader = new XmlValidatingReader(textReader);
                 validatingReader.ValidationType = ValidationType.Schema;
+                validatingReader.XmlResolver = null;
 
                 validatingReader.Schemas.Add(schema);
 

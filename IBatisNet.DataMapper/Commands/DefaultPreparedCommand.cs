@@ -33,6 +33,7 @@ using System.Reflection;
 using System.Text;
 using IBatisNet.Common;
 using IBatisNet.Common.Logging;
+using IBatisNet.Common.Utilities;
 using IBatisNet.Common.Utilities.Objects;
 using IBatisNet.DataMapper.Configuration.ParameterMapping;
 using IBatisNet.DataMapper.Configuration.Statements;
@@ -172,17 +173,20 @@ namespace IBatisNet.DataMapper.Commands
 				#region Logging
 				if (_logger.IsDebugEnabled)
 				{
-					if (parameterCopy.Value == DBNull.Value) 
+					if (parameterCopy.Value == null || parameterCopy.Value == DBNull.Value)
 					{
                         paramLogList.Append("null");
                         paramLogList.Append("], ");
                         typeLogList.Append("System.DBNull, null");
                         typeLogList.Append("], ");
-					} 
-					else 
+					}
+					else
 					{
 
-                        paramLogList.Append(parameterCopy.Value.ToString());
+                        paramLogList.Append(SecurityStringHelper.FormatLogParameterValue(
+                            sqlParameter.ParameterName,
+                            property.PropertyName,
+                            parameterCopy.Value));
                         paramLogList.Append("], ");
 
 						// sqlParameter.DbType could be null (as with Npgsql)

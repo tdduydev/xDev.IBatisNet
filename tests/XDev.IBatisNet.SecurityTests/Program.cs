@@ -3,6 +3,7 @@ using System.Data;
 using System.Data.Common;
 using System.Reflection;
 using System.Xml;
+using IBatisNet.Common;
 using IBatisNet.Common.Exceptions;
 using IBatisNet.Common.Utilities;
 using IBatisNet.DataMapper.Configuration;
@@ -15,7 +16,10 @@ internal static class Program
     private static readonly (string Name, Action Run)[] Tests =
     [
         ("XML loaders reject DTD/XXE", XmlLoadersRejectDtd),
+        ("Sensitive strings are redacted", SensitiveStringsAreRedacted),
         ("Analyzer flags inline SQL substitution", AnalyzerFlagsInlineSqlSubstitution),
+        ("Analyzer flags risky compatibility settings", AnalyzerFlagsRiskyCompatibilitySettings),
+        ("Analyzer flags legacy serializable cache cloning", AnalyzerFlagsLegacySerializableCacheCloning),
         ("Runtime can block inline SQL substitution", RuntimeCanBlockInlineSqlSubstitution),
         ("Runtime still accepts parameterized SQL when hardened", RuntimeAcceptsParameterizedSqlWhenHardened)
     ];
@@ -70,6 +74,66 @@ internal static class Program
         Assert(
             result.Statements.Any(x => x.InlineSubstitutions.Contains("OrderBy")),
             "Expected statement inventory to include the raw inline substitution.");
+    }
+
+    private static void SensitiveStringsAreRedacted()
+    {
+        const string connectionString = "Server=.;Database=AppDb;User ID=sa;Password=secret;Token=abc;Application Name=xDev.IBatisNet";
+
+        var masked = SecurityStringHelper.MaskConnectionString(connectionString);
+        Assert(!masked.Contains("secret", StringComparison.Ordinal), "Expected password to be masked.");
+        Assert(!masked.Contains("Token=abc", StringComparison.Ordinal), "Expected token to be masked.");
+        Assert(!masked.Contains("User ID=sa", StringComparison.OrdinalIgnoreCase), "Expected user id to be masked.");
+
+        var dataSource = new DataSource
+        {
+            Name = "default",
+            ConnectionString = connectionString
+        };
+        Assert(!dataSource.ToString().Contains("secret", StringComparison.Ordinal), "Expected DataSource.ToString to mask secrets.");
+
+        var cacheKey = SecurityStringHelper.CreateCacheKey(connectionString, "dbo.FindPatient");
+        Assert(!cacheKey.Contains("secret", StringComparison.Ordinal), "Expected cache key to omit raw connection string.");
+        Assert(!cacheKey.Contains("Server=", StringComparison.Ordinal), "Expected cache key to be opaque.");
+
+        var logValue = SecurityStringHelper.FormatLogParameterValue("@PatientName", "PatientName", "Nguyen Van A");
+        Assert(!logValue.Contains("Nguyen", StringComparison.Ordinal), "Expected debug log value to omit raw parameter data.");
+        Assert(logValue.Contains("length=", StringComparison.Ordinal), "Expected debug log value to keep safe shape metadata.");
+    }
+
+    private static void AnalyzerFlagsRiskyCompatibilitySettings()
+    {
+        using var fixture = SecurityFixture.Create(
+            includeInlineSql: false,
+            settings:
+            """
+            <setting allowInlineSqlParameters="true" />
+            <setting useEmbedStatementParams="true" />
+            """);
+
+        var result = new SqlMapAnalyzer().Analyze(fixture.ConfigPath, fixture.Root);
+        Assert(
+            result.Diagnostics.Any(x =>
+                x.Severity.Equals("Security", StringComparison.OrdinalIgnoreCase) &&
+                x.Message.Contains("allowInlineSqlParameters=true", StringComparison.Ordinal)),
+            "Expected a Security diagnostic for allowInlineSqlParameters=true.");
+        Assert(
+            result.Diagnostics.Any(x =>
+                x.Severity.Equals("Security", StringComparison.OrdinalIgnoreCase) &&
+                x.Message.Contains("useEmbedStatementParams=true", StringComparison.Ordinal)),
+            "Expected a Security diagnostic for useEmbedStatementParams=true.");
+    }
+
+    private static void AnalyzerFlagsLegacySerializableCacheCloning()
+    {
+        using var fixture = SecurityFixture.Create(includeInlineSql: false, includeSerializableCache: true);
+        var result = new SqlMapAnalyzer().Analyze(fixture.ConfigPath, fixture.Root);
+
+        Assert(
+            result.Diagnostics.Any(x =>
+                x.Severity.Equals("Security", StringComparison.OrdinalIgnoreCase) &&
+                x.Message.Contains("Serializable read-write cache", StringComparison.Ordinal)),
+            "Expected a Security diagnostic for serialize=true/readOnly=false cache cloning.");
     }
 
     private static void RuntimeCanBlockInlineSqlSubstitution()
@@ -134,7 +198,7 @@ internal sealed class SecurityFixture : IDisposable
     public string Root { get; }
     public string ConfigPath { get; }
 
-    public static SecurityFixture Create(bool includeInlineSql)
+    public static SecurityFixture Create(bool includeInlineSql, string? settings = null, bool includeSerializableCache = false)
     {
         var root = Path.Combine(Path.GetTempPath(), "xdev-ibatis-security-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(root);
@@ -169,12 +233,21 @@ internal sealed class SecurityFixture : IDisposable
             </providers>
             """);
 
+        var cacheModels = includeSerializableCache
+            ? """
+                <cacheModels>
+                  <cacheModel id="PatientCache" implementation="MEMORY" readOnly="false" serialize="true" />
+                </cacheModels>
+              """
+            : "";
+
         File.WriteAllText(
             mapPath,
             includeInlineSql
-                ? """
+                ? $$"""
                   <?xml version="1.0" encoding="utf-8" ?>
                   <sqlMap namespace="Patient" xmlns="http://ibatis.apache.org/mapping">
+                    {{cacheModels}}
                     <statements>
                       <select id="FindUnsafe">
                         select Id, Code from Patient where Id = #Id# order by $OrderBy$
@@ -182,9 +255,10 @@ internal sealed class SecurityFixture : IDisposable
                     </statements>
                   </sqlMap>
                   """
-                : """
+                : $$"""
                   <?xml version="1.0" encoding="utf-8" ?>
                   <sqlMap namespace="Patient" xmlns="http://ibatis.apache.org/mapping">
+                    {{cacheModels}}
                     <statements>
                       <select id="FindSafe">
                         select Id, Code from Patient where Id = #Id#
@@ -193,13 +267,15 @@ internal sealed class SecurityFixture : IDisposable
                   </sqlMap>
                   """);
 
+        settings ??= """<setting allowInlineSqlParameters="false" />""";
+
         File.WriteAllText(
             configPath,
             $$"""
             <?xml version="1.0" encoding="utf-8" ?>
             <sqlMapConfig xmlns="http://ibatis.apache.org/dataMapper">
               <settings>
-                <setting allowInlineSqlParameters="false" />
+                {{settings}}
               </settings>
               <providers url="{{new Uri(providersPath).AbsoluteUri}}" />
               <database>

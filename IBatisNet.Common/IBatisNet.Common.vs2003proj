@@ -285,6 +285,10 @@
                     BuildAction = "Compile"
                 />
                 <File
+                    RelPath = "Utilities\SecurityStringHelper.cs"
+                    BuildAction = "Compile"
+                />
+                <File
                     RelPath = "Utilities\HashCodeProvider.cs"
                     SubType = "Code"
                     BuildAction = "Compile"

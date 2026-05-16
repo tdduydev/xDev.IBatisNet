@@ -72,6 +72,8 @@ control.
   `System.Transactions.TransactionScope`.
 - Serializable cache cloning uses `DataContractSerializer` on .NET 10 instead
   of `BinaryFormatter`.
+- Debug parameter logging redacts values and connection string diagnostics mask
+  credentials before they reach logs or debugger views.
 
 ## Packaging
 

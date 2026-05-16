@@ -28,6 +28,7 @@
 
 using System;
 using System.Xml.Serialization;
+using IBatisNet.Common.Utilities;
 
 #endregion
 
@@ -117,7 +118,7 @@ namespace IBatisNet.Common
 		/// <returns>A string that describes the data source</returns>
 		public override string ToString()
 		{
-			return "Source: ConnectionString : "+ConnectionString;
+			return "Source: ConnectionString : "+SecurityStringHelper.MaskConnectionString(ConnectionString);
 		}
 		#endregion
 

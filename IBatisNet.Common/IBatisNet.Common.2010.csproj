@@ -206,6 +206,7 @@
     <Compile Include="Utilities\DBHelperParameterCache.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="Utilities\SecurityStringHelper.cs" />
     <Compile Include="Utilities\HashCodeProvider.cs">
       <SubType>Code</SubType>
     </Compile>

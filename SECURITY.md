@@ -31,8 +31,34 @@ XXE and XML entity expansion risk when loading `SqlMap.config`,
 `providers.config`, properties XML, and SQL map XML through the built-in
 resource helpers.
 
+Keep `providers.config`, `SqlMap.config`, SQL maps, and property files under
+trusted deployment control. Provider classes, type aliases, type handlers, and
+logging adapters are loaded by type name from configuration, so untrusted XML
+configuration should be treated like untrusted code.
+
+## Logging and Connection Strings
+
+Debug logging no longer writes raw parameter values. Non-null values are logged
+as shape metadata, sensitive parameter names are masked, and `DataSource`
+diagnostics mask credentials in connection strings.
+
+The stored procedure parameter cache also uses opaque hashed keys instead of
+keeping raw connection strings as cache keys.
+
+## Legacy Serializable Caches
+
+On .NET 10, read-write serializable cache cloning uses
+`DataContractSerializer`.
+
+On legacy .NET Framework package assets, iBATIS.NET-compatible
+`serialize="true"` plus `readOnly="false"` cache models still use the inherited
+binary serialization behavior for compatibility. Avoid that combination unless
+the cached data is fully trusted and process-local; prefer `readOnly="true"` or
+non-serializable cache models for hardened deployments.
+
 ## Auditing Existing Maps
 
 Run the XML debugger against an application's `SqlMap.config`. It flags raw
 `$...$` substitutions as `Security` diagnostics and lists the affected
-statements so they can be migrated or allow-listed deliberately.
+statements so they can be migrated or allow-listed deliberately. It also flags
+risky compatibility settings and legacy serializable cache cloning patterns.

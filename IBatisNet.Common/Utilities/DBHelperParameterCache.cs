@@ -175,7 +175,7 @@ namespace IBatisNet.Common.Utilities
 		/// <param name="commandParameters">an array of IDataParameters to be cached</param>
 		public void CacheParameterSet(string connectionString, string commandText, params IDataParameter[] commandParameters)
 		{
-			string hashKey = connectionString + ":" + commandText;
+			string hashKey = SecurityStringHelper.CreateCacheKey(connectionString, commandText);
 
 			_paramCache[hashKey] = commandParameters;
 		}
@@ -197,7 +197,7 @@ namespace IBatisNet.Common.Utilities
 		/// <returns>an array of IDataParameters</returns>
 		public IDataParameter[] GetCachedParameterSet(string connectionString, string commandText)
 		{
-			string hashKey = connectionString + ":" + commandText;
+			string hashKey = SecurityStringHelper.CreateCacheKey(connectionString, commandText);
 
 			IDataParameter[] cachedParameters = (IDataParameter[]) _paramCache[hashKey];
 			
@@ -242,7 +242,7 @@ namespace IBatisNet.Common.Utilities
 		public IDataParameter[] GetSpParameterSet(IDalSession session, 
 			string spName, bool includeReturnValueParameter)
 		{
-			string hashKey = session.DataSource.ConnectionString + ":" + spName + (includeReturnValueParameter ? ":include ReturnValue Parameter":"");
+			string hashKey = SecurityStringHelper.CreateCacheKey(session.DataSource.ConnectionString, spName + (includeReturnValueParameter ? ":include ReturnValue Parameter":""));
 
 			IDataParameter[] cachedParameters;
 			
