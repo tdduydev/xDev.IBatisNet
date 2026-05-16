@@ -41,4 +41,5 @@ dotnet publish tools\XDev.IBatisNet.XmlDebugger\XDev.IBatisNet.XmlDebugger.cspro
 
 The GitHub Actions workflow `XML Debugger Desktop` builds installable/portable
 artifacts for Windows x64, Windows ARM64, macOS Intel, macOS Apple Silicon, and
-Linux x64/ARM64.
+Linux x64/ARM64 on pushes to `master`/`codex/**`, package tags (`v*` and
+`test-v*`), desktop-only tags (`xml-debugger-v*`), and manual dispatches.

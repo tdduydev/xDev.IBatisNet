@@ -6,6 +6,8 @@ on:
       - master
       - "codex/**"
     tags:
+      - "v*"
+      - "test-v*"
       - "xml-debugger-v*"
   workflow_dispatch:
     inputs:
@@ -38,6 +40,10 @@ jobs:
           if ([string]::IsNullOrWhiteSpace($version)) {
             if ("${{ github.ref }}" -like "refs/tags/xml-debugger-v*") {
               $version = "${{ github.ref_name }}".Substring("xml-debugger-v".Length)
+            } elseif ("${{ github.ref }}" -like "refs/tags/test-v*") {
+              $version = "${{ github.ref_name }}".Substring("test-v".Length)
+            } elseif ("${{ github.ref }}" -like "refs/tags/v*") {
+              $version = "${{ github.ref_name }}".Substring("v".Length)
             } else {
               $version = "0.1.${{ github.run_number }}"
             }
