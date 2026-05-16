@@ -2,6 +2,8 @@
 
 Compatibility-first iBATIS.NET package for xDev-maintained legacy systems.
 
+Documentation site: https://ibatisnet.xdev.asia
+
 This repository is an xDev-maintained continuation of Apache iBATIS.NET
 DataMapper 1.6.2 for current xDev systems.
 

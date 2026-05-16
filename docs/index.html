@@ -1,0 +1,611 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>xDev.IBatisNet - Tài liệu hướng dẫn sử dụng</title>
+  <meta name="description" content="Tài liệu hướng dẫn sử dụng xDev.IBatisNet, package tương thích iBATIS.NET DataMapper cho hệ thống legacy của xDev.">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="site-shell">
+    <aside class="sidebar" aria-label="Mục lục">
+      <div class="brand">
+        <div class="brand-mark">iB</div>
+        <strong>xDev.IBatisNet</strong>
+        <span>Tài liệu sử dụng và vận hành</span>
+      </div>
+      <nav>
+        <a href="#overview">Tổng quan</a>
+        <a href="#install">Cài đặt</a>
+        <a href="#quickstart">Quick start</a>
+        <a href="#config">Cấu hình</a>
+        <a href="#maps">SQL map XML</a>
+        <a href="#api">API sử dụng</a>
+        <a href="#advanced">Tính năng nâng cao</a>
+        <a href="#debugger">XML Debugger</a>
+        <a href="#migration">Nâng cấp legacy</a>
+        <a href="#pages">GitHub Pages</a>
+        <a href="#troubleshooting">Xử lý lỗi</a>
+      </nav>
+      <div class="domain-pill">
+        Domain tài liệu
+        <code>ibatisnet.xdev.asia</code>
+      </div>
+    </aside>
+
+    <div class="content">
+      <header class="hero">
+        <div>
+          <p class="eyebrow">Compatibility-first iBATIS.NET DataMapper</p>
+          <h1>xDev.IBatisNet</h1>
+          <p>
+            Package duy trì iBATIS.NET DataMapper 1.6.2 cho hệ thống legacy của xDev:
+            giữ namespace <code>IBatisNet.*</code>, giữ định dạng <code>SqlMap.config</code>,
+            <code>providers.config</code>, các file SQL map XML, đồng thời có asset cho .NET Framework
+            và .NET 10.
+          </p>
+          <div class="hero-actions">
+            <a class="button primary" href="#quickstart">Bắt đầu sử dụng</a>
+            <a class="button" href="#debugger">Kiểm tra XML map</a>
+          </div>
+        </div>
+        <div class="hero-visual">
+          <img src="assets/architecture.svg" alt="Sơ đồ luồng chạy xDev.IBatisNet">
+        </div>
+      </header>
+
+      <main>
+        <section class="section" id="overview">
+          <h2>Tổng quan</h2>
+          <p class="lead">
+            xDev.IBatisNet là bản tiếp quản thực dụng của Apache iBATIS.NET DataMapper.
+            Mục tiêu chính không phải viết lại ORM, mà là giúp ứng dụng cũ thay package
+            đang dùng bằng package mới mà không phải sửa hàng loạt SQL map.
+          </p>
+
+          <div class="grid three">
+            <div class="card stat">
+              <strong>1.6.2</strong>
+              <span>Baseline iBATIS.NET DataMapper gốc.</span>
+            </div>
+            <div class="card stat">
+              <strong>net40+</strong>
+              <span>Package có asset .NET Framework 4.0, 4.5.2, 4.7.2 và 4.8.</span>
+            </div>
+            <div class="card stat">
+              <strong>net10.0</strong>
+              <span>Có SDK-style solution và assembly net10.0 cho hướng hiện đại hóa.</span>
+            </div>
+          </div>
+
+          <h3>Khi nào nên dùng</h3>
+          <ul>
+            <li>Ứng dụng đang có <code>SqlMap.config</code>, <code>providers.config</code> và nhiều file <code>Maps/*.xml</code>.</li>
+            <li>Code đang gọi <code>IBatisNet.DataMapper.Mapper</code>, <code>ISqlMapper</code>, <code>QueryForObject</code>, <code>QueryForList</code>, <code>Insert</code>, <code>Update</code>, <code>Delete</code>.</li>
+            <li>Cần nâng cấp packaging/build nhưng chưa muốn đổi định dạng XML map hoặc rewrite sang ORM khác.</li>
+          </ul>
+
+          <h3>Nguyên tắc tương thích</h3>
+          <ul class="checklist">
+            <li>Giữ assembly name <code>IBatisNet.Common</code> và <code>IBatisNet.DataMapper</code>.</li>
+            <li>Giữ namespace <code>IBatisNet.*</code> để source code cũ không đổi.</li>
+            <li>Giữ XML format của iBATIS.NET: <code>sqlMapConfig</code>, <code>sqlMap</code>, <code>resultMap</code>, <code>parameterMap</code>, dynamic tags.</li>
+            <li>Ưu tiên sửa nhỏ, có thể kiểm chứng, thay vì refactor lớn.</li>
+          </ul>
+        </section>
+
+        <section class="section" id="install">
+          <h2>Cài đặt</h2>
+          <p class="lead">
+            Package NuGet có id <code>xDev.IBatisNet</code>. Bên trong package vẫn chứa assembly legacy
+            <code>IBatisNet.Common.dll</code> và <code>IBatisNet.DataMapper.dll</code>.
+          </p>
+
+          <h3>.NET CLI</h3>
+          <pre><code>dotnet add package xDev.IBatisNet --version 1.6.2-xdev.9</code></pre>
+
+          <h3>PackageReference</h3>
+          <pre><code>&lt;ItemGroup&gt;
+  &lt;PackageReference Include="xDev.IBatisNet" Version="1.6.2-xdev.9" /&gt;
+&lt;/ItemGroup&gt;</code></pre>
+
+          <h3>Target framework được đóng gói</h3>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Target</th>
+                  <th>Assembly chính</th>
+                  <th>Ghi chú</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>net40</code>, <code>net452</code>, <code>net472</code>, <code>net48</code></td>
+                  <td><code>IBatisNet.Common</code>, <code>IBatisNet.DataMapper</code></td>
+                  <td>Dành cho ứng dụng legacy. Không ép host app đổi logging package.</td>
+                </tr>
+                <tr>
+                  <td><code>net10.0</code></td>
+                  <td><code>IBatisNet.Common</code>, <code>IBatisNet.DataMapper</code>, <code>IBatisNet.Common.Logging.Log4Net</code></td>
+                  <td>Dùng Castle.Core, log4net và System.Configuration.ConfigurationManager bản hiện đại.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="notice">
+            Nếu ứng dụng cũ đang reference trực tiếp DLL, hãy thay bằng NuGet trước ở môi trường test.
+            Việc đổi package không nên đi kèm đổi SQL map trong cùng một lần release lớn.
+          </div>
+        </section>
+
+        <section class="section" id="quickstart">
+          <h2>Quick Start</h2>
+          <p class="lead">
+            Ví dụ dưới đây dùng SQL Server và domain <code>Account</code>. Với Oracle, MySQL,
+            PostgreSQL hoặc ODBC/OleDb, phần khác biệt chính nằm ở provider và SQL dialect trong map.
+          </p>
+
+          <h3>1. Đặt file cấu hình</h3>
+          <figure class="figure">
+            <img src="assets/configuration-flow.svg" alt="Sơ đồ vị trí các file SqlMap.config, providers.config, database.config và Maps XML">
+            <figcaption>Console/Windows app đặt cùng thư mục file chạy; web app đặt cùng tầng với <code>web.config</code>.</figcaption>
+          </figure>
+
+          <pre><code>AppRoot/
+  SqlMap.config
+  providers.config
+  database.config
+  Maps/
+    MSSQL/
+      SqlClient/
+        Account.xml</code></pre>
+
+          <h3>2. Tạo domain model</h3>
+          <pre><code>public sealed class Account
+{
+    public int Id { get; set; }
+    public string FirstName { get; set; }
+    public string LastName { get; set; }
+    public string EmailAddress { get; set; }
+}</code></pre>
+
+          <h3>3. Khai báo <code>SqlMap.config</code></h3>
+          <pre><code>&lt;?xml version="1.0" encoding="utf-8" ?&gt;
+&lt;sqlMapConfig xmlns="http://ibatis.apache.org/dataMapper"&gt;
+  &lt;properties resource="database.config"/&gt;
+
+  &lt;settings&gt;
+    &lt;setting useStatementNamespaces="true"/&gt;
+    &lt;setting cacheModelsEnabled="true"/&gt;
+    &lt;setting validateSqlMap="false"/&gt;
+    &lt;setting useReflectionOptimizer="true"/&gt;
+  &lt;/settings&gt;
+
+  &lt;providers resource="providers.config"/&gt;
+
+  &lt;database&gt;
+    &lt;provider name="sqlServer4.0"/&gt;
+    &lt;dataSource
+      name="iBatisNet"
+      connectionString="data source=${datasource};database=${database};user id=${userid};password=${password}"/&gt;
+  &lt;/database&gt;
+
+  &lt;alias&gt;
+    &lt;typeAlias alias="Account" type="MyApp.Domain.Account, MyApp"/&gt;
+  &lt;/alias&gt;
+
+  &lt;sqlMaps&gt;
+    &lt;sqlMap resource="Maps/MSSQL/SqlClient/Account.xml"/&gt;
+  &lt;/sqlMaps&gt;
+&lt;/sqlMapConfig&gt;</code></pre>
+
+          <h3>4. Tạo SQL map</h3>
+          <pre><code>&lt;?xml version="1.0" encoding="utf-8" ?&gt;
+&lt;sqlMap namespace="Account"
+        xmlns="http://ibatis.apache.org/mapping"&gt;
+  &lt;resultMaps&gt;
+    &lt;resultMap id="account-result" class="Account"&gt;
+      &lt;result property="Id" column="Account_ID"/&gt;
+      &lt;result property="FirstName" column="Account_FirstName"/&gt;
+      &lt;result property="LastName" column="Account_LastName"/&gt;
+      &lt;result property="EmailAddress" column="Account_Email"/&gt;
+    &lt;/resultMap&gt;
+  &lt;/resultMaps&gt;
+
+  &lt;statements&gt;
+    &lt;select id="GetById" parameterClass="int" resultMap="account-result"&gt;
+      select Account_ID, Account_FirstName, Account_LastName, Account_Email
+      from Accounts
+      where Account_ID = #value#
+    &lt;/select&gt;
+  &lt;/statements&gt;
+&lt;/sqlMap&gt;</code></pre>
+
+          <h3>5. Gọi từ code</h3>
+          <pre><code>using IBatisNet.DataMapper;
+
+ISqlMapper mapper = Mapper.Instance();
+
+var account = (Account)mapper.QueryForObject("Account.GetById", 1);</code></pre>
+
+          <div class="notice">
+            Nếu <code>useStatementNamespaces="false"</code>, gọi statement bằng <code>GetById</code>.
+            Nếu bật namespace, gọi bằng <code>Account.GetById</code>.
+          </div>
+        </section>
+
+        <section class="section" id="config">
+          <h2>Cấu hình</h2>
+          <p class="lead">
+            <code>SqlMap.config</code> là file gốc. Nó load property, provider, database, alias,
+            type handler và danh sách SQL map.
+          </p>
+
+          <h3><code>database.config</code></h3>
+          <pre><code>&lt;settings&gt;
+  &lt;add key="userid" value="IBatisNet" /&gt;
+  &lt;add key="password" value="test" /&gt;
+  &lt;add key="database" value="IBatisNet" /&gt;
+  &lt;add key="datasource" value="(local)\NetSDK" /&gt;
+  &lt;add key="directory" value="Maps" /&gt;
+  &lt;add key="useStatementNamespaces" value="true" /&gt;
+&lt;/settings&gt;</code></pre>
+
+          <h3><code>providers.config</code> cho SQL Server</h3>
+          <pre><code>&lt;providers xmlns="http://ibatis.apache.org/providers"&gt;
+  &lt;clear/&gt;
+
+  &lt;provider
+    name="sqlServer4.0"
+    enabled="true"
+    assemblyName="System.Data, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+    connectionClass="System.Data.SqlClient.SqlConnection"
+    commandClass="System.Data.SqlClient.SqlCommand"
+    parameterClass="System.Data.SqlClient.SqlParameter"
+    parameterDbTypeClass="System.Data.SqlDbType"
+    parameterDbTypeProperty="SqlDbType"
+    dataAdapterClass="System.Data.SqlClient.SqlDataAdapter"
+    commandBuilderClass="System.Data.SqlClient.SqlCommandBuilder"
+    usePositionalParameters="false"
+    useParameterPrefixInSql="true"
+    useParameterPrefixInParameter="true"
+    parameterPrefix="@"
+    allowMARS="false" /&gt;
+&lt;/providers&gt;</code></pre>
+
+          <h3>Settings quan trọng</h3>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Setting</th>
+                  <th>Ý nghĩa</th>
+                  <th>Gợi ý</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>useStatementNamespaces</code></td>
+                  <td>Thêm namespace của file map vào statement id.</td>
+                  <td>Bật nếu muốn tránh trùng id giữa nhiều map.</td>
+                </tr>
+                <tr>
+                  <td><code>cacheModelsEnabled</code></td>
+                  <td>Cho phép dùng <code>&lt;cacheModel&gt;</code>.</td>
+                  <td>Bật khi map legacy đã khai báo cache.</td>
+                </tr>
+                <tr>
+                  <td><code>validateSqlMap</code></td>
+                  <td>Validate XML theo schema.</td>
+                  <td>Tắt khi map cũ có extension/khác biệt nhỏ; bật ở môi trường kiểm thử nếu muốn siết chặt.</td>
+                </tr>
+                <tr>
+                  <td><code>useReflectionOptimizer</code></td>
+                  <td>Dùng optimizer cho object mapping.</td>
+                  <td>Giữ theo cấu hình legacy trước, chỉ đổi khi gặp lỗi runtime.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="section" id="maps">
+          <h2>SQL Map XML</h2>
+          <p class="lead">
+            SQL map định nghĩa cách biến row thành object và cách biến object thành tham số SQL.
+            Đây là phần nên giữ ổn định nhất khi thay package.
+          </p>
+
+          <h3><code>resultMap</code></h3>
+          <pre><code>&lt;resultMap id="account-result" class="Account"&gt;
+  &lt;result property="Id" column="Account_ID"/&gt;
+  &lt;result property="FirstName" column="Account_FirstName"/&gt;
+  &lt;result property="EmailAddress" column="Account_Email" nullValue="no_email@provided.com"/&gt;
+&lt;/resultMap&gt;</code></pre>
+
+          <h3><code>parameterMap</code></h3>
+          <pre><code>&lt;parameterMap id="update-params" class="Account"&gt;
+  &lt;parameter property="FirstName" /&gt;
+  &lt;parameter property="LastName" /&gt;
+  &lt;parameter property="EmailAddress" nullValue="no_email@provided.com"/&gt;
+  &lt;parameter property="Id" /&gt;
+&lt;/parameterMap&gt;</code></pre>
+
+          <h3>Inline parameter</h3>
+          <pre><code>&lt;update id="UpdateAccount" parameterClass="Account"&gt;
+  update Accounts set
+    Account_FirstName = #FirstName#,
+    Account_LastName = #LastName#,
+    Account_Email = #EmailAddress,type=string,dbType=Varchar,nullValue=no_email@provided.com#
+  where Account_ID = #Id#
+&lt;/update&gt;</code></pre>
+
+          <div class="notice danger">
+            <code>#Property#</code> tạo database parameter. <code>$Property$</code> là text substitution
+            trực tiếp vào SQL, chỉ dùng cho giá trị đã whitelist như tên cột sort hoặc tên bảng nội bộ.
+          </div>
+
+          <h3>Dynamic SQL</h3>
+          <pre><code>&lt;select id="SearchAccounts" parameterClass="Account" resultMap="account-result"&gt;
+  select Account_ID, Account_FirstName, Account_LastName, Account_Email
+  from Accounts
+  &lt;dynamic prepend="where"&gt;
+    &lt;isGreaterThan prepend="and" property="Id" compareValue="0"&gt;
+      Account_ID = #Id#
+    &lt;/isGreaterThan&gt;
+    &lt;isNotEmpty prepend="and" property="FirstName"&gt;
+      Account_FirstName = #FirstName#
+    &lt;/isNotEmpty&gt;
+  &lt;/dynamic&gt;
+&lt;/select&gt;</code></pre>
+
+          <h3><code>include</code> fragment</h3>
+          <pre><code>&lt;sql id="activeWhere"&gt;
+  where IsActive = 1
+&lt;/sql&gt;
+
+&lt;select id="GetActiveAccounts" resultMap="account-result"&gt;
+  select * from Accounts
+  &lt;include refid="activeWhere"/&gt;
+&lt;/select&gt;</code></pre>
+        </section>
+
+        <section class="section" id="api">
+          <h2>API sử dụng</h2>
+          <p class="lead">
+            Hầu hết ứng dụng chỉ cần <code>Mapper.Instance()</code> hoặc <code>DomSqlMapBuilder</code>
+            để lấy <code>ISqlMapper</code>, sau đó gọi statement theo id.
+          </p>
+
+          <h3>Singleton mapper</h3>
+          <pre><code>ISqlMapper mapper = Mapper.Instance();
+
+Account account = (Account)mapper.QueryForObject("Account.GetById", 1);
+IList accounts = mapper.QueryForList("Account.GetAll", null);
+object newId = mapper.Insert("Account.Insert", account);
+int rows = mapper.Update("Account.Update", account);
+int deleted = mapper.Delete("Account.Delete", account);</code></pre>
+
+          <h3>Configure từ file cụ thể</h3>
+          <pre><code>using IBatisNet.DataMapper.Configuration;
+
+var builder = new DomSqlMapBuilder();
+ISqlMapper mapper = builder.Configure("SqlMap.config");</code></pre>
+
+          <h3>Transaction</h3>
+          <pre><code>ISqlMapper mapper = Mapper.Instance();
+
+try
+{
+    mapper.BeginTransaction();
+    mapper.Insert("Account.Insert", account);
+    mapper.Update("Account.Update", account);
+    mapper.CommitTransaction();
+}
+catch
+{
+    mapper.RollBackTransaction();
+    throw;
+}</code></pre>
+
+          <h3>Generic API</h3>
+          <p>
+            Với build có symbol <code>dotnet2</code>, interface có thêm các overload generic như
+            <code>QueryForObject&lt;T&gt;</code>, <code>QueryForList&lt;T&gt;</code> và
+            <code>QueryForDictionary&lt;K,V&gt;</code>.
+          </p>
+        </section>
+
+        <section class="section" id="advanced">
+          <h2>Tính năng nâng cao</h2>
+
+          <h3>Cache model</h3>
+          <pre><code>&lt;cacheModels&gt;
+  &lt;cacheModel id="account-cache" implementation="MEMORY"&gt;
+    &lt;flushInterval hours="24"/&gt;
+    &lt;flushOnExecute statement="Account.Update"/&gt;
+    &lt;property name="Type" value="Weak"/&gt;
+  &lt;/cacheModel&gt;
+&lt;/cacheModels&gt;
+
+&lt;select id="GetCachedAccounts" resultMap="account-result" cacheModel="account-cache"&gt;
+  select * from Accounts order by Account_ID
+&lt;/select&gt;</code></pre>
+
+          <h3>Type handler</h3>
+          <pre><code>&lt;alias&gt;
+  &lt;typeAlias alias="OuiNonBool"
+    type="MyApp.Mapping.OuiNonBoolTypeHandlerCallback, MyApp"/&gt;
+&lt;/alias&gt;
+
+&lt;typeHandlers&gt;
+  &lt;typeHandler type="bool" dbType="Varchar" callback="OuiNonBool"/&gt;
+&lt;/typeHandlers&gt;</code></pre>
+
+          <h3><code>selectKey</code> sau insert</h3>
+          <pre><code>&lt;insert id="InsertCategory" parameterClass="Category"&gt;
+  &lt;selectKey property="Id" type="post" resultClass="int"&gt;
+    select SCOPE_IDENTITY() as value
+  &lt;/selectKey&gt;
+  insert into Categories (Category_Name, Category_Guid)
+  values (#Name#, #Guid:UniqueIdentifier#)
+&lt;/insert&gt;</code></pre>
+
+          <h3>Stored procedure</h3>
+          <pre><code>&lt;procedure id="InsertAccountViaStoreProcedure" parameterMap="insert-params"&gt;
+  ps_InsertAccount
+&lt;/procedure&gt;</code></pre>
+        </section>
+
+        <section class="section" id="debugger">
+          <h2>XML Debugger</h2>
+          <p class="lead">
+            Repo có tool desktop Avalonia <code>XDev.IBatisNet.XmlDebugger</code> để đọc
+            <code>SqlMap.config</code> và các SQL map XML. Tool này không execute SQL và không mở
+            database connection, nên phù hợp để kiểm tra map trước khi deploy.
+          </p>
+
+          <figure class="figure">
+            <img src="assets/xml-debugger.svg" alt="Minh họa giao diện xDev iBATIS XML Debugger">
+            <figcaption>Chọn <code>SqlMap.config</code>, chọn working root nếu cần, bấm Analyze để xem diagnostics, map files và statement inventory.</figcaption>
+          </figure>
+
+          <h3>Chạy local</h3>
+          <pre><code>dotnet run --project tools\XDev.IBatisNet.XmlDebugger\XDev.IBatisNet.XmlDebugger.csproj -c Release</code></pre>
+
+          <h3>Tool kiểm tra gì</h3>
+          <ul>
+            <li>Thiếu <code>SqlMap.config</code>, <code>properties</code> hoặc <code>sqlMap</code> resource.</li>
+            <li>XML không hợp lệ ở file config hoặc SQL map.</li>
+            <li>Placeholder <code>${...}</code> không resolve được.</li>
+            <li>Statement id trùng giữa các map đã load.</li>
+            <li>Thiếu <code>resultMap</code>, <code>parameterMap</code> hoặc <code>&lt;include refid="..."&gt;</code> nội bộ.</li>
+            <li>Danh sách statement <code>select</code>, <code>insert</code>, <code>update</code>, <code>delete</code>, <code>statement</code>, <code>procedure</code>.</li>
+            <li>Tham số lấy từ token <code>#...#</code> và <code>$...$</code>.</li>
+          </ul>
+
+          <h3>Publish bản portable Windows</h3>
+          <pre><code>dotnet publish tools\XDev.IBatisNet.XmlDebugger\XDev.IBatisNet.XmlDebugger.csproj `
+  -c Release `
+  -r win-x64 `
+  --self-contained true `
+  /p:PublishSingleFile=true `
+  /p:IncludeNativeLibrariesForSelfExtract=true `
+  -o artifacts\xml-debugger\win-x64</code></pre>
+        </section>
+
+        <section class="section" id="migration">
+          <h2>Nâng cấp từ legacy IBatisNet</h2>
+          <p class="lead">
+            Cách an toàn nhất là thay package trước, giữ nguyên file XML, chạy smoke test,
+            sau đó mới xử lý từng map có vấn đề.
+          </p>
+
+          <ol>
+            <li>Chụp lại version package/DLL IBatisNet hiện tại trong ứng dụng.</li>
+            <li>Thêm package <code>xDev.IBatisNet</code> vào một nhánh riêng.</li>
+            <li>Giữ nguyên <code>SqlMap.config</code>, <code>providers.config</code>, <code>database.config</code> và thư mục map.</li>
+            <li>Build ứng dụng và xử lý binding redirect nếu host app yêu cầu.</li>
+            <li>Chạy XML Debugger trên bộ map thực tế.</li>
+            <li>Chạy smoke test cho các statement quan trọng: login, danh sách chính, insert/update/delete, stored procedure.</li>
+            <li>So sánh connection string, provider name, statement namespace và logging output với bản cũ.</li>
+            <li>Release theo từng ứng dụng hoặc từng module, có đường rollback package rõ ràng.</li>
+          </ol>
+
+          <h3>Lưu ý .NET 10</h3>
+          <ul>
+            <li>Session store dựa trên remoting <code>CallContext</code> được thay bằng hướng <code>AsyncLocal</code>.</li>
+            <li>COM+ transaction cũ được thay bằng <code>System.Transactions.TransactionScope</code>.</li>
+            <li>Serializable cache cloning dùng <code>DataContractSerializer</code> thay cho <code>BinaryFormatter</code>.</li>
+            <li>Các phần phụ thuộc <code>System.Web</code> không nằm trong build .NET 10.</li>
+          </ul>
+        </section>
+
+        <section class="section" id="pages">
+          <h2>GitHub Pages và domain</h2>
+          <p class="lead">
+            Site này được đặt trong thư mục <code>docs/</code> để GitHub Pages có thể publish trực tiếp.
+            File <code>docs/CNAME</code> đã đặt domain là <code>ibatisnet.xdev.asia</code>.
+          </p>
+
+          <h3>Thiết lập trong GitHub</h3>
+          <ol>
+            <li>Vào repository <code>tdduydev/xDev.IBatisNet</code>.</li>
+            <li>Mở <strong>Settings</strong> → <strong>Pages</strong>.</li>
+            <li>Chọn source là branch publish, folder <code>/docs</code>.</li>
+            <li>Custom domain nhập <code>ibatisnet.xdev.asia</code>.</li>
+            <li>Bật Enforce HTTPS sau khi GitHub cấp certificate.</li>
+          </ol>
+
+          <h3>DNS gợi ý</h3>
+          <pre><code>Type:  CNAME
+Name:  ibatisnet
+Value: tdduydev.github.io</code></pre>
+
+          <div class="notice">
+            Nếu repository đổi owner hoặc chuyển sang organization khác, cập nhật lại value CNAME DNS theo
+            domain GitHub Pages của owner mới.
+          </div>
+        </section>
+
+        <section class="section" id="troubleshooting">
+          <h2>Xử lý lỗi thường gặp</h2>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Lỗi</th>
+                  <th>Nguyên nhân hay gặp</th>
+                  <th>Cách xử lý</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>SqlMap.config was not found</code></td>
+                  <td>File không nằm đúng application root.</td>
+                  <td>Đặt cạnh file <code>.exe</code> với console/desktop app, hoặc cùng tầng <code>web.config</code> với web app.</td>
+                </tr>
+                <tr>
+                  <td>Không tìm thấy statement id</td>
+                  <td>Bật/tắt <code>useStatementNamespaces</code> không khớp cách gọi.</td>
+                  <td>Nếu bật namespace, gọi <code>Namespace.StatementId</code>; nếu tắt, gọi <code>StatementId</code>.</td>
+                </tr>
+                <tr>
+                  <td>Không resolve được <code>${...}</code></td>
+                  <td>Thiếu key trong <code>database.config</code> hoặc properties file sai đường dẫn.</td>
+                  <td>Chạy XML Debugger, kiểm tra tab Properties và warning placeholder.</td>
+                </tr>
+                <tr>
+                  <td>SQL parameter sai prefix</td>
+                  <td><code>providers.config</code> không đúng provider hoặc positional parameter.</td>
+                  <td>Kiểm tra <code>parameterPrefix</code>, <code>usePositionalParameters</code>, <code>useParameterPrefixInSql</code>.</td>
+                </tr>
+                <tr>
+                  <td>Map object thiếu field/property</td>
+                  <td><code>resultMap</code> trỏ sai property hoặc alias class sai assembly.</td>
+                  <td>Kiểm tra <code>typeAlias</code>, tên property, visibility và column alias trong SQL.</td>
+                </tr>
+                <tr>
+                  <td>Stored procedure không chạy</td>
+                  <td>Provider không hỗ trợ cú pháp hiện tại hoặc parameter map sai thứ tự.</td>
+                  <td>So sánh với map legacy đang chạy, kiểm tra <code>parameterMap</code> và provider positional mode.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </main>
+
+      <footer class="footer">
+        <p>
+          xDev.IBatisNet giữ tinh thần tương thích trước, hiện đại hóa sau. Khi thay đổi behavior,
+          hãy ghi chú trong release note và kiểm thử bằng bộ SQL map thực tế.
+        </p>
+      </footer>
+    </div>
+  </div>
+</body>
+</html>

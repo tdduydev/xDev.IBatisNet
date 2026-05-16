@@ -1,0 +1,69 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1040" height="680" viewBox="0 0 1040 680" role="img" aria-labelledby="title desc">
+  <title id="title">xDev.IBatisNet architecture flow</title>
+  <desc id="desc">A diagram showing an application calling IBatisNet DataMapper, XML configuration and SQL map files, providers, and the database.</desc>
+  <defs>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="12" stdDeviation="14" flood-color="#182230" flood-opacity="0.14"/>
+    </filter>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#2563eb"/>
+    </marker>
+  </defs>
+  <rect width="1040" height="680" rx="8" fill="#f6f8fb"/>
+  <text x="56" y="62" fill="#182230" font-family="Segoe UI, Arial, sans-serif" font-size="30" font-weight="700">Luồng chạy xDev.IBatisNet</text>
+  <text x="56" y="94" fill="#596579" font-family="Segoe UI, Arial, sans-serif" font-size="16">Ứng dụng giữ API IBatisNet.*, cấu hình XML và SQL map legacy.</text>
+
+  <g filter="url(#shadow)">
+    <rect x="58" y="150" width="220" height="118" rx="8" fill="#ffffff" stroke="#d9e1ea"/>
+    <text x="82" y="188" fill="#182230" font-family="Segoe UI, Arial, sans-serif" font-size="21" font-weight="700">Ứng dụng .NET</text>
+    <text x="82" y="220" fill="#596579" font-family="Consolas, monospace" font-size="14">Mapper.Instance()</text>
+    <text x="82" y="245" fill="#596579" font-family="Consolas, monospace" font-size="14">QueryForObject()</text>
+  </g>
+
+  <g filter="url(#shadow)">
+    <rect x="408" y="132" width="252" height="154" rx="8" fill="#ffffff" stroke="#d9e1ea"/>
+    <rect x="408" y="132" width="252" height="44" rx="8" fill="#0f766e"/>
+    <text x="432" y="161" fill="#ffffff" font-family="Segoe UI, Arial, sans-serif" font-size="20" font-weight="700">IBatisNet.DataMapper</text>
+    <text x="432" y="207" fill="#182230" font-family="Segoe UI, Arial, sans-serif" font-size="16">Build SqlMapper</text>
+    <text x="432" y="234" fill="#596579" font-family="Segoe UI, Arial, sans-serif" font-size="15">Map tham số, kết quả, cache</text>
+    <text x="432" y="260" fill="#596579" font-family="Segoe UI, Arial, sans-serif" font-size="15">Mở connection và transaction</text>
+  </g>
+
+  <g filter="url(#shadow)">
+    <rect x="760" y="150" width="220" height="118" rx="8" fill="#ffffff" stroke="#d9e1ea"/>
+    <text x="786" y="188" fill="#182230" font-family="Segoe UI, Arial, sans-serif" font-size="21" font-weight="700">Database</text>
+    <text x="786" y="220" fill="#596579" font-family="Segoe UI, Arial, sans-serif" font-size="15">SQL Server, Oracle,</text>
+    <text x="786" y="245" fill="#596579" font-family="Segoe UI, Arial, sans-serif" font-size="15">MySQL, PostgreSQL...</text>
+  </g>
+
+  <g filter="url(#shadow)">
+    <rect x="102" y="400" width="220" height="130" rx="8" fill="#ffffff" stroke="#d9e1ea"/>
+    <text x="126" y="438" fill="#182230" font-family="Segoe UI, Arial, sans-serif" font-size="20" font-weight="700">SqlMap.config</text>
+    <text x="126" y="469" fill="#596579" font-family="Segoe UI, Arial, sans-serif" font-size="15">settings, providers,</text>
+    <text x="126" y="494" fill="#596579" font-family="Segoe UI, Arial, sans-serif" font-size="15">database, alias, sqlMaps</text>
+  </g>
+
+  <g filter="url(#shadow)">
+    <rect x="410" y="400" width="220" height="130" rx="8" fill="#ffffff" stroke="#d9e1ea"/>
+    <text x="434" y="438" fill="#182230" font-family="Segoe UI, Arial, sans-serif" font-size="20" font-weight="700">SQL Map XML</text>
+    <text x="434" y="469" fill="#596579" font-family="Segoe UI, Arial, sans-serif" font-size="15">resultMap, parameterMap,</text>
+    <text x="434" y="494" fill="#596579" font-family="Segoe UI, Arial, sans-serif" font-size="15">select, insert, update...</text>
+  </g>
+
+  <g filter="url(#shadow)">
+    <rect x="718" y="400" width="220" height="130" rx="8" fill="#ffffff" stroke="#d9e1ea"/>
+    <text x="742" y="438" fill="#182230" font-family="Segoe UI, Arial, sans-serif" font-size="20" font-weight="700">providers.config</text>
+    <text x="742" y="469" fill="#596579" font-family="Segoe UI, Arial, sans-serif" font-size="15">Provider classes, prefix,</text>
+    <text x="742" y="494" fill="#596579" font-family="Segoe UI, Arial, sans-serif" font-size="15">parameter style</text>
+  </g>
+
+  <path d="M 278 209 L 395 209" stroke="#2563eb" stroke-width="4" fill="none" marker-end="url(#arrow)"/>
+  <path d="M 660 209 L 747 209" stroke="#2563eb" stroke-width="4" fill="none" marker-end="url(#arrow)"/>
+  <path d="M 212 400 C 260 330 350 285 410 250" stroke="#2563eb" stroke-width="3" fill="none" marker-end="url(#arrow)"/>
+  <path d="M 520 400 L 532 300" stroke="#2563eb" stroke-width="3" fill="none" marker-end="url(#arrow)"/>
+  <path d="M 828 400 C 790 330 704 282 660 246" stroke="#2563eb" stroke-width="3" fill="none" marker-end="url(#arrow)"/>
+
+  <rect x="58" y="585" width="922" height="46" rx="8" fill="#eef5f4" stroke="#c5ddd9"/>
+  <text x="84" y="615" fill="#115e59" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="700">Mục tiêu tương thích:</text>
+  <text x="250" y="615" fill="#182230" font-family="Segoe UI, Arial, sans-serif" font-size="17">thay package legacy mà không bắt ứng dụng đổi namespace, assembly hoặc SQL map.</text>
+</svg>

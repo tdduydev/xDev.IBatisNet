@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1040" height="660" viewBox="0 0 1040 660" role="img" aria-labelledby="title desc">
+  <title id="title">xDev iBATIS XML Debugger guide screenshot</title>
+  <desc id="desc">A guided screenshot-style illustration of the XML Debugger desktop tool with config selection, diagnostics, map list, statements, and SQL preview.</desc>
+  <defs>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="16" stdDeviation="18" flood-color="#182230" flood-opacity="0.16"/>
+    </filter>
+  </defs>
+  <rect width="1040" height="660" rx="8" fill="#f6f8fb"/>
+  <text x="54" y="60" fill="#182230" font-family="Segoe UI, Arial, sans-serif" font-size="30" font-weight="700">XML Debugger</text>
+  <text x="54" y="92" fill="#596579" font-family="Segoe UI, Arial, sans-serif" font-size="16">Kiểm tra SqlMap.config và SQL map XML mà không mở kết nối database.</text>
+
+  <g filter="url(#shadow)">
+    <rect x="54" y="126" width="932" height="476" rx="8" fill="#ffffff" stroke="#d9e1ea"/>
+    <rect x="54" y="126" width="932" height="42" rx="8" fill="#182230"/>
+    <circle cx="82" cy="147" r="6" fill="#fb7185"/>
+    <circle cx="104" cy="147" r="6" fill="#facc15"/>
+    <circle cx="126" cy="147" r="6" fill="#34d399"/>
+    <text x="158" y="153" fill="#e5edf6" font-family="Segoe UI, Arial, sans-serif" font-size="14">xDev iBATIS XML Debugger</text>
+
+    <rect x="78" y="192" width="690" height="36" rx="6" fill="#f8fafc" stroke="#d9e1ea"/>
+    <text x="94" y="215" fill="#596579" font-family="Consolas, monospace" font-size="13">C:\Apps\Legacy\SqlMap.config</text>
+    <rect x="782" y="192" width="74" height="36" rx="6" fill="#eef5f4" stroke="#c5ddd9"/>
+    <text x="798" y="215" fill="#115e59" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="700">Browse</text>
+    <rect x="868" y="192" width="94" height="36" rx="6" fill="#0f766e"/>
+    <text x="889" y="215" fill="#ffffff" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="700">Analyze</text>
+
+    <rect x="78" y="252" width="260" height="300" rx="8" fill="#fbfcfe" stroke="#d9e1ea"/>
+    <text x="100" y="284" fill="#182230" font-family="Segoe UI, Arial, sans-serif" font-size="18" font-weight="700">Diagnostics</text>
+    <rect x="100" y="306" width="216" height="58" rx="6" fill="#fff1f3" stroke="#fecdd3"/>
+    <text x="118" y="330" fill="#be123c" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="700">Error</text>
+    <text x="118" y="350" fill="#596579" font-family="Segoe UI, Arial, sans-serif" font-size="13">Missing SQL map resource</text>
+    <rect x="100" y="380" width="216" height="58" rx="6" fill="#fff8e8" stroke="#edd49a"/>
+    <text x="118" y="404" fill="#8a5a0a" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="700">Warning</text>
+    <text x="118" y="424" fill="#596579" font-family="Segoe UI, Arial, sans-serif" font-size="13">Unresolved ${password}</text>
+    <rect x="100" y="454" width="216" height="58" rx="6" fill="#eef5f4" stroke="#c5ddd9"/>
+    <text x="118" y="478" fill="#115e59" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="700">Info</text>
+    <text x="118" y="498" fill="#596579" font-family="Segoe UI, Arial, sans-serif" font-size="13">18 maps loaded</text>
+
+    <rect x="364" y="252" width="260" height="300" rx="8" fill="#fbfcfe" stroke="#d9e1ea"/>
+    <text x="386" y="284" fill="#182230" font-family="Segoe UI, Arial, sans-serif" font-size="18" font-weight="700">Statements</text>
+    <rect x="386" y="306" width="216" height="34" rx="6" fill="#ffffff" stroke="#d9e1ea"/>
+    <text x="402" y="328" fill="#94a3b8" font-family="Segoe UI, Arial, sans-serif" font-size="13">Search</text>
+    <text x="386" y="376" fill="#182230" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="700">Account.GetById</text>
+    <text x="386" y="398" fill="#596579" font-family="Segoe UI, Arial, sans-serif" font-size="13">select - Account.xml</text>
+    <line x1="386" y1="416" x2="602" y2="416" stroke="#d9e1ea"/>
+    <text x="386" y="450" fill="#182230" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="700">Account.Update</text>
+    <text x="386" y="472" fill="#596579" font-family="Segoe UI, Arial, sans-serif" font-size="13">update - Account.xml</text>
+    <line x1="386" y1="490" x2="602" y2="490" stroke="#d9e1ea"/>
+    <text x="386" y="524" fill="#182230" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="700">Category.Insert</text>
+
+    <rect x="650" y="252" width="312" height="300" rx="8" fill="#111827"/>
+    <text x="674" y="286" fill="#e5edf6" font-family="Segoe UI, Arial, sans-serif" font-size="18" font-weight="700">SQL Preview</text>
+    <text x="674" y="326" fill="#93c5fd" font-family="Consolas, monospace" font-size="14">select Account_ID as Id,</text>
+    <text x="674" y="352" fill="#93c5fd" font-family="Consolas, monospace" font-size="14">Account_FirstName as FirstName</text>
+    <text x="674" y="378" fill="#93c5fd" font-family="Consolas, monospace" font-size="14">from Accounts</text>
+    <text x="674" y="404" fill="#f4c46b" font-family="Consolas, monospace" font-size="14">where Account_ID = #value#</text>
+    <rect x="674" y="438" width="240" height="64" rx="6" fill="#182230" stroke="#334155"/>
+    <text x="694" y="464" fill="#cbd5e1" font-family="Segoe UI, Arial, sans-serif" font-size="13">Parameters</text>
+    <text x="694" y="488" fill="#ffffff" font-family="Consolas, monospace" font-size="14">value</text>
+  </g>
+
+  <text x="84" y="632" fill="#596579" font-family="Segoe UI, Arial, sans-serif" font-size="15">Dùng trước khi deploy để bắt lỗi thiếu file, XML sai, id trùng, include/resultMap/parameterMap không resolve được.</text>
+</svg>
