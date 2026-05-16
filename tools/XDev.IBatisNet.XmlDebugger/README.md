@@ -11,9 +11,11 @@ files without starting the host application.
 - Duplicate statement ids across loaded maps.
 - Missing local `resultMap`, `parameterMap`, and `<include refid="...">`
   references.
+- SQL injection risk from `$...$` inline substitutions.
+- XML files are parsed with DTD/external entity resolution disabled.
 - Statement inventory for `select`, `insert`, `update`, `delete`, `statement`,
   and `procedure` nodes.
-- Parameter tokens from `#...#` and `$...$`.
+- Parameter tokens from safe `#...#` values and raw `$...$` substitutions.
 
 This debugger is XML-only by design. It does not execute SQL or open database
 connections, so it is safe to run against production map folders for inspection.

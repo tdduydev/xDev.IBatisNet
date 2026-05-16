@@ -14,4 +14,7 @@
   <Folder Name="/examples/">
     <Project Path="examples/XDev.IBatisNet.IntegrationPerf/XDev.IBatisNet.IntegrationPerf.csproj" />
   </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/XDev.IBatisNet.SecurityTests/XDev.IBatisNet.SecurityTests.csproj" />
+  </Folder>
 </Solution>

@@ -178,7 +178,7 @@
                         <TextBlock Text="{Binding SelectedStatement.FilePath}" Classes="caption" TextTrimming="CharacterEllipsis" />
                     </StackPanel>
 
-                    <Grid Grid.Row="1" ColumnDefinitions="140,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto" ColumnSpacing="8" RowSpacing="4">
+                    <Grid Grid.Row="1" ColumnDefinitions="140,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto" ColumnSpacing="8" RowSpacing="4">
                         <TextBlock Grid.Row="0" Grid.Column="0" Text="Kind" Classes="caption" />
                         <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding SelectedStatement.Kind}" />
                         <TextBlock Grid.Row="1" Grid.Column="0" Text="Parameter class/map" Classes="caption" />
@@ -189,8 +189,10 @@
                         <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding SelectedStatement.ResultMap}" TextWrapping="Wrap" />
                         <TextBlock Grid.Row="4" Grid.Column="0" Text="Parameters" Classes="caption" />
                         <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding SelectedStatement.ParameterText}" TextWrapping="Wrap" />
-                        <TextBlock Grid.Row="5" Grid.Column="0" Text="Includes" Classes="caption" />
-                        <TextBlock Grid.Row="5" Grid.Column="1" Text="{Binding SelectedStatement.IncludeText}" TextWrapping="Wrap" />
+                        <TextBlock Grid.Row="5" Grid.Column="0" Text="Inline SQL" Classes="caption" />
+                        <TextBlock Grid.Row="5" Grid.Column="1" Text="{Binding SelectedStatement.InlineSubstitutionText}" TextWrapping="Wrap" />
+                        <TextBlock Grid.Row="6" Grid.Column="0" Text="Includes" Classes="caption" />
+                        <TextBlock Grid.Row="6" Grid.Column="1" Text="{Binding SelectedStatement.IncludeText}" TextWrapping="Wrap" />
                     </Grid>
 
                     <TextBox Grid.Row="2"

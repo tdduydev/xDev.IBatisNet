@@ -1,16 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<xs:schema targetNamespace="http://ibatis.apache.org/dataMapper" 
-elementFormDefault="qualified" 
-xmlns:mstns="http://tempuri.org/XMLSchema.xsd" 
-xmlns:xs="http://www.w3.org/2001/XMLSchema" 
+<xs:schema targetNamespace="http://ibatis.apache.org/dataMapper"
+elementFormDefault="qualified"
+xmlns:mstns="http://tempuri.org/XMLSchema.xsd"
+xmlns:xs="http://www.w3.org/2001/XMLSchema"
 xmlns="http://ibatis.apache.org/dataMapper"
-xmlns:vs="http://schemas.microsoft.com/Visual-Studio-Intellisense" 
-vs:friendlyname="iBATIS.NET DataMapper Configuration Schema" 
-vs:ishtmlschema="false" 
-vs:iscasesensitive="true" 
-vs:requireattributequotes="true" 
-vs:defaultnamespacequalifier="" 
-vs:defaultnsprefix=""> 
+xmlns:vs="http://schemas.microsoft.com/Visual-Studio-Intellisense"
+vs:friendlyname="iBATIS.NET DataMapper Configuration Schema"
+vs:ishtmlschema="false"
+vs:iscasesensitive="true"
+vs:requireattributequotes="true"
+vs:defaultnamespacequalifier=""
+vs:defaultnsprefix="">
 
 	<xs:annotation>
 		<xs:documentation>
@@ -89,6 +89,7 @@ vs:defaultnsprefix="">
 			<xs:attribute name="validateSqlMap" type="xs:string" default="false"/>
 			<xs:attribute name="useEmbedStatementParams" type="xs:boolean" default="false"/>
 			<xs:attribute name="useReflectionOptimizer" type="xs:boolean" default="true"/>
+			<xs:attribute name="allowInlineSqlParameters" type="xs:boolean" default="true"/>
 		</xs:complexType>
 	</xs:element>
 	<xs:element name="settings">

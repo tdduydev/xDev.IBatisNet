@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <NoWarn>$(NoWarn);8603;8766;8767</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\IBatisNet.Common\IBatisNet.Common.Net10.csproj" />
+    <ProjectReference Include="..\..\IBatisNet.DataMapper\IBatisNet.DataMapper.Net10.csproj" />
+    <ProjectReference Include="..\..\tools\XDev.IBatisNet.XmlDebugger\XDev.IBatisNet.XmlDebugger.csproj" />
+  </ItemGroup>
+</Project>

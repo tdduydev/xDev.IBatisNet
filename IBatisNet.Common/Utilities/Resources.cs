@@ -4,23 +4,23 @@
  * $Revision: 408099 $
  * $LastChangedDate: 2006-05-20 15:56:36 -0600 (Sat, 20 May 2006) $
  * $LastChangedBy: gbayon $
- * 
+ *
  * iBATIS.NET Data Mapper
  * Copyright (C) 2006/2005 - The Apache Software Foundation
- *  
- * 
+ *
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- * 
+ *
  ********************************************************************************/
 #endregion
 
@@ -45,10 +45,10 @@ namespace IBatisNet.Common.Utilities
 {
 	/// <summary>
 	/// A class to simplify access to resources.
-	/// 
-	/// The file can be loaded from the application root directory 
-	/// (use the resource attribute) 
-	/// or from any valid URL (use the url attribute). 
+	///
+	/// The file can be loaded from the application root directory
+	/// (use the resource attribute)
+	/// or from any valid URL (use the url attribute).
 	/// For example,to load a fixed path file, use:
 	/// &lt;properties url=”file:///c:/config/my.properties” /&gt;
 	/// </summary>
@@ -104,6 +104,42 @@ namespace IBatisNet.Common.Utilities
 		/// </summary>
 		 public const string PROTOCOL_SEPARATOR = "://";
 
+		private static XmlReaderSettings CreateSecureXmlReaderSettings()
+		{
+			XmlReaderSettings settings = new XmlReaderSettings();
+			settings.DtdProcessing = DtdProcessing.Prohibit;
+			settings.XmlResolver = null;
+			return settings;
+		}
+
+		private static XmlDocument CreateSecureXmlDocument()
+		{
+			XmlDocument document = new XmlDocument();
+			document.XmlResolver = null;
+			return document;
+		}
+
+		private static XmlDocument LoadSecureXmlDocument(string inputUri)
+		{
+			XmlDocument document = CreateSecureXmlDocument();
+			using (XmlReader reader = XmlReader.Create(inputUri, CreateSecureXmlReaderSettings()))
+			{
+				document.Load(reader);
+			}
+			return document;
+		}
+
+		private static XmlDocument LoadSecureXmlDocument(Stream stream)
+		{
+			XmlDocument document = CreateSecureXmlDocument();
+			using (XmlReader reader = XmlReader.Create(stream, CreateSecureXmlReaderSettings()))
+			{
+				document.Load(reader);
+			}
+			return document;
+		}
+
+
 		/// <summary>
 		/// Strips protocol name from the resource name
 		/// </summary>
@@ -139,38 +175,26 @@ namespace IBatisNet.Common.Utilities
 		/// <returns>An XmlDocument representation of the config file</returns>
 		public static XmlDocument GetConfigAsXmlDocument(string resourcePath)
 		{
-			XmlDocument config = new XmlDocument(); 
-			XmlTextReader reader = null; 
 			resourcePath = GetFileSystemResourceWithoutProtocol(resourcePath);
-			
+
 			if (!Resources.FileExists(resourcePath))
 			{
-				resourcePath = Path.Combine(_baseDirectory, resourcePath); 
+				resourcePath = Path.Combine(_baseDirectory, resourcePath);
 			}
 
-			try 
-			{ 
-				reader = new XmlTextReader( resourcePath ); 				
-				config.Load(reader); 
-			} 
-			catch(Exception e) 
-			{ 
-				throw new ConfigurationException( 
-					string.Format("Unable to load config file \"{0}\". Cause : {1}", 
-					resourcePath, 
-					e.Message ) ,e); 
-			} 
-			finally 
-			{ 
-				if (reader != null) 
-				{ 
-					reader.Close(); 
-				} 
-			} 
-			return config; 
+			try
+			{
+				return LoadSecureXmlDocument(resourcePath);
+			}
+			catch(Exception e)
+			{
+				throw new ConfigurationException(
+					string.Format("Unable to load config file \"{0}\". Cause : {1}",
+					resourcePath,
+					e.Message ) ,e);
+			}
 
 		}
-
 		/// <summary>
 		/// Determines whether the specified file exists.
 		/// </summary>
@@ -208,19 +232,19 @@ namespace IBatisNet.Common.Utilities
 #else
 			if (File.Exists(filePath) )
 			{
-				// true if the caller has the required permissions and path contains the name of an existing file; 
+				// true if the caller has the required permissions and path contains the name of an existing file;
 				return true;
 			}
 			else
 			{
-				// This method also returns false if the caller does not have sufficient permissions 
-				// to read the specified file, 
+				// This method also returns false if the caller does not have sufficient permissions
+				// to read the specified file,
 				// no exception is thrown and the method returns false regardless of the existence of path.
 				// So we check permissiion and throw an exception if no permission
 				FileIOPermission filePermission = null;
 				try
 				{
-					// filePath must be the absolute path of the file. 
+					// filePath must be the absolute path of the file.
 					filePermission = new FileIOPermission(FileIOPermissionAccess.Read, filePath);
 				}
 				catch
@@ -231,13 +255,13 @@ namespace IBatisNet.Common.Utilities
 				{
 					filePermission.Demand();
 				}
-				catch(Exception e) 
-				{ 
-					throw new ConfigurationException( 
-						string.Format("iBATIS doesn't have the right to read the config file \"{0}\". Cause : {1}", 
-						filePath, 
-						e.Message ) ,e); 
-				} 
+				catch(Exception e)
+				{
+					throw new ConfigurationException(
+						string.Format("iBATIS doesn't have the right to read the config file \"{0}\". Cause : {1}",
+						filePath,
+						e.Message ) ,e);
+				}
 
 				return false;
 			}
@@ -306,22 +330,17 @@ namespace IBatisNet.Common.Utilities
 		/// <returns></returns>
 		public static XmlDocument GetStreamAsXmlDocument(Stream resource)
 		{
-			XmlDocument config = new XmlDocument();
-
-			try 
+			try
 			{
-				config.Load(resource);
+				return LoadSecureXmlDocument(resource);
 			}
 			catch(Exception e)
 			{
 				throw new ConfigurationException(
-					string.Format("Unable to load XmlDocument via stream. Cause : {0}", 
-					e.Message ) ,e); 
+					string.Format("Unable to load XmlDocument via stream. Cause : {0}",
+					e.Message ) ,e);
 			}
-
-			return config;
 		}
-
 		/// <summary>
 		/// Get XmlDocument from a FileInfo resource
 		/// </summary>
@@ -329,22 +348,17 @@ namespace IBatisNet.Common.Utilities
 		/// <returns></returns>
 		public static XmlDocument GetFileInfoAsXmlDocument(FileInfo resource)
 		{
-			XmlDocument config = new XmlDocument();
-
-			try 
+			try
 			{
-				config.Load( resource.FullName );
+				return LoadSecureXmlDocument(resource.FullName);
 			}
 			catch(Exception e)
 			{
 				throw new ConfigurationException(
-					string.Format("Unable to load XmlDocument via FileInfo. Cause : {0}", 
-					e.Message ) ,e); 
+					string.Format("Unable to load XmlDocument via FileInfo. Cause : {0}",
+					e.Message ) ,e);
 			}
-
-			return config;
 		}
-
 		/// <summary>
 		/// Get XmlDocument from a Uri resource
 		/// </summary>
@@ -352,22 +366,17 @@ namespace IBatisNet.Common.Utilities
 		/// <returns></returns>
 		public static XmlDocument GetUriAsXmlDocument(Uri resource)
 		{
-			XmlDocument config = new XmlDocument();
-
-			try 
+			try
 			{
-				config.Load( resource.AbsoluteUri );
+				return LoadSecureXmlDocument(resource.AbsoluteUri);
 			}
 			catch(Exception e)
 			{
 				throw new ConfigurationException(
-					string.Format("Unable to load XmlDocument via Uri. Cause : {0}", 
-					e.Message ) ,e); 
+					string.Format("Unable to load XmlDocument via Uri. Cause : {0}",
+					e.Message ) ,e);
 			}
-
-			return config;
 		}
-
 		/// <summary>
 		/// Get XmlDocument from relative (from root directory of the application) path resource
 		/// </summary>
@@ -375,24 +384,18 @@ namespace IBatisNet.Common.Utilities
 		/// <returns></returns>
 		public static XmlDocument GetResourceAsXmlDocument(string resource)
 		{
-			XmlDocument config = new XmlDocument();
-
-			try 
+			try
 			{
-				config.Load( Path.Combine(_applicationBase, resource) );
+				return LoadSecureXmlDocument(Path.Combine(_applicationBase, resource));
 			}
 			catch(Exception e)
 			{
 				throw new ConfigurationException(
-					string.Format("Unable to load file via resource \"{0}\" as resource. Cause : {1}", 
-					resource, 
-					e.Message ) ,e); 
+					string.Format("Unable to load file via resource \"{0}\" as resource. Cause : {1}",
+					resource,
+					e.Message ) ,e);
 			}
-
-			return config;
 		}
-
-
 		/// <summary>
 		/// Get XmlDocument from absolute path resource
 		/// </summary>
@@ -400,32 +403,27 @@ namespace IBatisNet.Common.Utilities
 		/// <returns></returns>
 		public static XmlDocument GetUrlAsXmlDocument(string url)
 		{
-			XmlDocument config = new XmlDocument();
-
-			try 
+			try
 			{
-				config.Load(url);
+				return LoadSecureXmlDocument(url);
 			}
 			catch(Exception e)
 			{
 				throw new ConfigurationException(
 					string.Format("Unable to load file via url \"{0}\" as url. Cause : {1}",
-					url, 
+					url,
 					e.Message  ) ,e);
 			}
-
-			return config;
 		}
 
-		
 		/// <summary>
-		/// 
+		///
 		/// </summary>
 		/// <param name="resource"></param>
 		/// <returns></returns>
 		public static XmlDocument GetEmbeddedResourceAsXmlDocument(string resource)
 		{
-			XmlDocument config = new XmlDocument();
+			XmlDocument config = CreateSecureXmlDocument();
 			bool isLoad = false;
 
 			FileAssemblyInfo fileInfo = new FileAssemblyInfo (resource);
@@ -438,7 +436,7 @@ namespace IBatisNet.Common.Utilities
                 assembly = Assembly.LoadWithPartialName (fileInfo.AssemblyName);
 #endif
                 Stream stream = assembly.GetManifestResourceStream(fileInfo.ResourceFileName);
-				// JIRA - IBATISNET-103 
+				// JIRA - IBATISNET-103
 				if (stream == null)
 				{
 					stream = assembly.GetManifestResourceStream(fileInfo.FileName);
@@ -447,18 +445,18 @@ namespace IBatisNet.Common.Utilities
 				{
 					try
 					{
-						config.Load(stream);
+						config = LoadSecureXmlDocument(stream);
 						isLoad = true;
 					}
 					catch(Exception e)
 					{
 						throw new ConfigurationException(
 							string.Format("Unable to load file \"{0}\" in embedded resource. Cause : {1}",
-							resource, 
+							resource,
 							e.Message  ) ,e);
 					}
 				}
-			} 
+			}
 			else
 			{
 				// bare type name... loop thru all loaded assemblies
@@ -470,14 +468,14 @@ namespace IBatisNet.Common.Utilities
 					{
 						try
 						{
-							config.Load(stream);
+							config = LoadSecureXmlDocument(stream);
 							isLoad = true;
 						}
 						catch(Exception e)
 						{
 							throw new ConfigurationException(
 								string.Format("Unable to load file \"{0}\" in embedded resource. Cause : ",
-								resource, 
+								resource,
 								e.Message  ) ,e);
 						}
 						break;
@@ -485,7 +483,7 @@ namespace IBatisNet.Common.Utilities
 				}
 			}
 
-			if (isLoad == false) 
+			if (isLoad == false)
 			{
 				_logger.Error("Could not load embedded resource from assembly");
 				throw new ConfigurationException(
@@ -509,14 +507,14 @@ namespace IBatisNet.Common.Utilities
 			FileInfo fileInfo = null;
 			resourcePath = GetFileSystemResourceWithoutProtocol(resourcePath);
 
-			if ( !Resources.FileExists(resourcePath)) 
+			if ( !Resources.FileExists(resourcePath))
 			{
 				resourcePath = Path.Combine(_applicationBase, resourcePath);
 			}
 
 			try
 			{
-				//argument : The fully qualified name of the new file, or the relative file name. 
+				//argument : The fully qualified name of the new file, or the relative file name.
 				fileInfo = new FileInfo(resourcePath);
 			}
 			catch(Exception e)
@@ -641,20 +639,20 @@ namespace IBatisNet.Common.Utilities
 
 			#region Methods
 			/// <summary>
-			/// 
+			///
 			/// </summary>
 			/// <param name="originalFileName"></param>
-			private void SplitFileAndAssemblyNames (string originalFileName) 
+			private void SplitFileAndAssemblyNames (string originalFileName)
 			{
 				_originalFileName = originalFileName;
 
 				int separatorIndex = originalFileName.IndexOf(FileAssemblyInfo.FileAssemblySeparator);
-				
+
 				if (separatorIndex < 0)
 				{
 					_unresolvedFileName = originalFileName.Trim();
 					_unresolvedAssemblyName = null; // IsAssemblyQualified will return false
-				} 
+				}
 				else
 				{
 					_unresolvedFileName = originalFileName.Substring(0, separatorIndex).Trim();

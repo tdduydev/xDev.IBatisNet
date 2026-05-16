@@ -4,23 +4,23 @@
  * $Header: $
  * $Revision: 638539 $
  * $Date: 2008-03-18 13:53:02 -0600 (Tue, 18 Mar 2008) $
- * 
+ *
  * iBATIS.NET Data Mapper
  * Copyright (C) 2004 - Gilles Bayon
- *  
- * 
+ *
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- * 
+ *
  ********************************************************************************/
 #endregion
 
@@ -89,7 +89,7 @@ namespace IBatisNet.DataMapper.Configuration
 		private const string PROPERTY_ELEMENT_VALUE_ATTRIB = "value";
 
 		/// <summary>
-		/// 
+		///
 		/// </summary>
 		private const string DATAMAPPER_NAMESPACE_PREFIX = "mapper";
 		private const string PROVIDERS_NAMESPACE_PREFIX = "provider";
@@ -207,7 +207,7 @@ namespace IBatisNet.DataMapper.Configuration
         /// Token for xml path to sql elements.
         /// </summary>
         private const string SQL_STATEMENT = "sqlMap/statements/sql";
-     	    
+
 		/// <summary>
 		/// Token for xml path to statement elements.
 		/// </summary>
@@ -285,6 +285,10 @@ namespace IBatisNet.DataMapper.Configuration
 		/// Token for useReflectionOptimizer attribute.
 		/// </summary>
 		private const string ATR_USE_REFLECTION_OPTIMIZER = "useReflectionOptimizer";
+		/// <summary>
+		/// Token for allowInlineSqlParameters attribute.
+		/// </summary>
+		private const string ATR_ALLOW_INLINE_SQL_PARAMETERS = "allowInlineSqlParameters";
 
 		#endregion
 
@@ -293,7 +297,7 @@ namespace IBatisNet.DataMapper.Configuration
 		private static readonly ILog _logger = LogManager.GetLogger( MethodBase.GetCurrentMethod().DeclaringType );
 
 		private ConfigurationScope _configScope = null;
-		private DeSerializerFactory _deSerializerFactory = null; 
+		private DeSerializerFactory _deSerializerFactory = null;
 		private InlineParameterMapParser _paramParser = null;
         private IObjectFactory _objectFactory = null;
         private ISetAccessorFactory _setAccessorFactory = null;
@@ -301,10 +305,10 @@ namespace IBatisNet.DataMapper.Configuration
 	    private ISqlMapper _sqlMapper = null;
         private bool _validateSqlMapConfig = true;
 
-		#endregion 		
-		
+		#endregion
+
 		#region Properties
-        
+
         /// <summary>
         /// Allow properties to be set before configuration.
         /// </summary>
@@ -344,7 +348,7 @@ namespace IBatisNet.DataMapper.Configuration
         {
             set { _sqlMapper = value; }
         }
-	    
+
         /// <summary>
         /// Enable validation of SqlMap document. This property must be set before configuration.
         /// </summary>
@@ -365,8 +369,8 @@ namespace IBatisNet.DataMapper.Configuration
             _paramParser = new InlineParameterMapParser();
             _deSerializerFactory = new DeSerializerFactory(_configScope);
 		}
-	
-		#endregion 
+
+		#endregion
 
 		#region Configure
 
@@ -378,7 +382,7 @@ namespace IBatisNet.DataMapper.Configuration
 		/// The file path is relative to the application root. For ASP.Net applications
 		/// this would be the same directory as the Web.config file. For other .Net
 		/// applications the SqlMap.config file should be placed in the same folder
-		/// as the executable. 
+		/// as the executable.
 		/// </remarks>
         public ISqlMapper Configure()
 		{
@@ -400,7 +404,7 @@ namespace IBatisNet.DataMapper.Configuration
 		/// Configure an ISqlMapper object from a file path.
 		/// </summary>
 		/// <param name="resource">
-		/// A relative ressource path from your Application root 
+		/// A relative ressource path from your Application root
 		/// or a absolue file path file:\\c:\dir\a.config
 		/// </param>
 		/// <returns>An ISqlMapper instance.</returns>
@@ -409,11 +413,11 @@ namespace IBatisNet.DataMapper.Configuration
 			XmlDocument document;
 			if (resource.StartsWith("file://"))
 			{
-				document = Resources.GetUrlAsXmlDocument( resource.Remove(0, 7) );	
+				document = Resources.GetUrlAsXmlDocument( resource.Remove(0, 7) );
 			}
 			else
 			{
-				document = Resources.GetResourceAsXmlDocument( resource );	
+				document = Resources.GetResourceAsXmlDocument( resource );
 			}
 			return Build( document, false);
 		}
@@ -452,8 +456,8 @@ namespace IBatisNet.DataMapper.Configuration
 		}
 
 		/// <summary>
-		/// Configure and monitor the default configuration file (SqlMap.config) for modifications 
-		/// and automatically reconfigure SqlMap. 
+		/// Configure and monitor the default configuration file (SqlMap.config) for modifications
+		/// and automatically reconfigure SqlMap.
 		/// </summary>
 		/// <returns>An ISqlMapper instance.</returns>
 		public ISqlMapper ConfigureAndWatch(ConfigureHandler configureDelegate)
@@ -462,11 +466,11 @@ namespace IBatisNet.DataMapper.Configuration
 		}
 
 		/// <summary>
-		/// Configure and monitor the configuration file for modifications 
+		/// Configure and monitor the configuration file for modifications
 		/// and automatically reconfigure the ISqlMapper instance.
 		/// </summary>
 		/// <param name="resource">
-		/// A relative ressource path from your Application root 
+		/// A relative ressource path from your Application root
 		/// or an absolue file path file:\\c:\dir\a.config
 		/// </param>
 		///<param name="configureDelegate">
@@ -478,11 +482,11 @@ namespace IBatisNet.DataMapper.Configuration
 			XmlDocument document = null;
 			if (resource.StartsWith("file://"))
 			{
-				document = Resources.GetUrlAsXmlDocument( resource.Remove(0, 7) );	
+				document = Resources.GetUrlAsXmlDocument( resource.Remove(0, 7) );
 			}
 			else
 			{
-				document = Resources.GetResourceAsXmlDocument( resource );	
+				document = Resources.GetResourceAsXmlDocument( resource );
 			}
 
 			ConfigWatcherHandler.ClearFilesMonitored();
@@ -493,16 +497,16 @@ namespace IBatisNet.DataMapper.Configuration
 			StateConfig state = new StateConfig();
 			state.FileName = resource;
 			state.ConfigureHandler = configureDelegate;
-            
+
 			ISqlMapper sqlMapper = Build( document, true );
-		    
+
 			new ConfigWatcherHandler( callBakDelegate, state );
 
             return sqlMapper;
 		}
 
 		/// <summary>
-		/// Configure and monitor the configuration file for modifications 
+		/// Configure and monitor the configuration file for modifications
 		/// and automatically reconfigure the ISqlMapper instance.
 		/// </summary>
 		/// <param name="resource">
@@ -526,7 +530,7 @@ namespace IBatisNet.DataMapper.Configuration
 			state.ConfigureHandler = configureDelegate;
 
 			ISqlMapper sqlMapper = Build( document, true );
-    
+
 		    new ConfigWatcherHandler(callBakDelegate, state);
 
             return sqlMapper;
@@ -542,7 +546,7 @@ namespace IBatisNet.DataMapper.Configuration
 			state.ConfigureHandler( null );
 		}
 
-		#endregion 
+		#endregion
 
 		#region Methods
 
@@ -554,14 +558,14 @@ namespace IBatisNet.DataMapper.Configuration
 		/// <param name="useConfigFileWatcher"></param>
 		/// <param name="isCallFromDao"></param>
 		/// <returns>Returns an ISqlMapper instance.</returns>
-		private ISqlMapper Build(XmlDocument document,DataSource dataSource, 
+		private ISqlMapper Build(XmlDocument document,DataSource dataSource,
 			bool useConfigFileWatcher, bool isCallFromDao)
 		{
 			_configScope.SqlMapConfigDocument = document;
 			_configScope.DataSource = dataSource;
 			_configScope.IsCallFromDao = isCallFromDao;
 			_configScope.UseConfigFileWatcher = useConfigFileWatcher;
-			
+
 			_configScope.XmlNamespaceManager = new XmlNamespaceManager(_configScope.SqlMapConfigDocument.NameTable);
 			_configScope.XmlNamespaceManager.AddNamespace(DATAMAPPER_NAMESPACE_PREFIX, DATAMAPPER_XML_NAMESPACE);
 			_configScope.XmlNamespaceManager.AddNamespace(PROVIDERS_NAMESPACE_PREFIX, PROVIDER_XML_NAMESPACE);
@@ -569,7 +573,7 @@ namespace IBatisNet.DataMapper.Configuration
 
 			try
 			{
-                if (_validateSqlMapConfig) 
+                if (_validateSqlMapConfig)
 				{
 					ValidateSchema( document.ChildNodes[1], "SqlMapConfig.xsd" );
 				}
@@ -577,7 +581,7 @@ namespace IBatisNet.DataMapper.Configuration
 				return _configScope.SqlMapper;
 			}
 			catch(Exception e)
-			{	
+			{
 				throw new ConfigurationException(_configScope.ErrorContext.ToString(), e);
 			}
 		}
@@ -594,20 +598,20 @@ namespace IBatisNet.DataMapper.Configuration
 #else
             XmlValidatingReader validatingReader = null;
 #endif
-            Stream xsdFile = null; 
+            Stream xsdFile = null;
 
 			_configScope.ErrorContext.Activity = "Validate SqlMap config";
 			try
-			{               
-				//Validate the document using a schema               
-				xsdFile = GetStream( schemaFileName ); 
+			{
+				//Validate the document using a schema
+				xsdFile = GetStream( schemaFileName );
 
 				if (xsdFile == null)
 				{
 					// TODO: avoid using hard-coded value "IBatisNet.DataMapper"
 					throw new ConfigurationException( "Unable to locate embedded resource [IBatisNet.DataMapper."+schemaFileName+"]. If you are building from source, verfiy the file is marked as an embedded resource.");
 				}
-				
+
 				XmlSchema schema = XmlSchema.Read( xsdFile, new ValidationEventHandler(ValidationCallBack) );
 
 #if dotnet2
@@ -715,30 +719,35 @@ namespace IBatisNet.DataMapper.Configuration
 				foreach (XmlNode setting in settings)
 				{
 					if (setting.Attributes[ATR_USE_STATEMENT_NAMESPACES] != null )
-					{	
+					{
 						string value = NodeUtils.ParsePropertyTokens(setting.Attributes[ATR_USE_STATEMENT_NAMESPACES].Value, _configScope.Properties);
-						_configScope.UseStatementNamespaces =  Convert.ToBoolean( value ); 
+						_configScope.UseStatementNamespaces =  Convert.ToBoolean( value );
 					}
 					if (setting.Attributes[ATR_CACHE_MODELS_ENABLED] != null )
-					{		
+					{
 						string value = NodeUtils.ParsePropertyTokens(setting.Attributes[ATR_CACHE_MODELS_ENABLED].Value, _configScope.Properties);
-						_configScope.IsCacheModelsEnabled =  Convert.ToBoolean( value ); 
+						_configScope.IsCacheModelsEnabled =  Convert.ToBoolean( value );
 					}
 					if (setting.Attributes[ATR_USE_REFLECTION_OPTIMIZER] != null )
-					{		
+					{
 						string value = NodeUtils.ParsePropertyTokens(setting.Attributes[ATR_USE_REFLECTION_OPTIMIZER].Value, _configScope.Properties);
-						_configScope.UseReflectionOptimizer =  Convert.ToBoolean( value ); 
+						_configScope.UseReflectionOptimizer =  Convert.ToBoolean( value );
 					}
 					if (setting.Attributes[ATR_VALIDATE_SQLMAP] != null )
-					{		
+					{
 						string value = NodeUtils.ParsePropertyTokens(setting.Attributes[ATR_VALIDATE_SQLMAP].Value, _configScope.Properties);
-						_configScope.ValidateSqlMap =  Convert.ToBoolean( value ); 
+						_configScope.ValidateSqlMap =  Convert.ToBoolean( value );
+					}
+					if (setting.Attributes[ATR_ALLOW_INLINE_SQL_PARAMETERS] != null )
+					{
+						string value = NodeUtils.ParsePropertyTokens(setting.Attributes[ATR_ALLOW_INLINE_SQL_PARAMETERS].Value, _configScope.Properties);
+						_configScope.AllowInlineSqlParameters =  Convert.ToBoolean( value );
 					}
 				}
 			}
 
-			#endregion            
-			
+			#endregion
+
             if (_objectFactory == null)
             {
                 _objectFactory = new ObjectFactory(_configScope.UseReflectionOptimizer);
@@ -782,7 +791,7 @@ namespace IBatisNet.DataMapper.Configuration
             cacheAlias.Name = "AnsiStringTypeHandler";
             _configScope.SqlMapper.TypeHandlerFactory.AddTypeAlias(cacheAlias.Name, cacheAlias);
 
-			#endregion 
+			#endregion
 
 			#region Load providers
 			if (_configScope.IsCallFromDao == false)
@@ -805,7 +814,7 @@ namespace IBatisNet.DataMapper.Configuration
 
 			_configScope.ErrorContext.Activity = "loading Database DataSource";
 			XmlNode nodeDataSource = _configScope.SqlMapConfigDocument.SelectSingleNode( ApplyDataMapperNamespacePrefix(XML_DATABASE_DATASOURCE), _configScope.XmlNamespaceManager );
-			
+
 			if (nodeDataSource == null)
 			{
 				if (_configScope.IsCallFromDao == false)
@@ -857,13 +866,13 @@ namespace IBatisNet.DataMapper.Configuration
 				{
 					_configScope.ErrorContext.Activity = "loading typeHandler";
 					TypeHandlerDeSerializer.Deserialize( xmlNode, _configScope );
-				} 
-				catch (Exception e) 
+				}
+				catch (Exception e)
 				{
 					NameValueCollection prop = NodeUtils.ParseAttributes(xmlNode, _configScope.Properties);
 
 					throw new ConfigurationException(
-						String.Format("Error registering TypeHandler class \"{0}\" for handling .Net type \"{1}\" and dbType \"{2}\". Cause: {3}", 
+						String.Format("Error registering TypeHandler class \"{0}\" for handling .Net type \"{1}\" and dbType \"{2}\". Cause: {3}",
 						NodeUtils.GetStringAttribute(prop, "callback"),
 						NodeUtils.GetStringAttribute(prop, "type"),
 						NodeUtils.GetStringAttribute(prop, "dbType"),
@@ -874,7 +883,7 @@ namespace IBatisNet.DataMapper.Configuration
 			#endregion
 
 			#region Load sqlMap mapping files
-			
+
 			foreach (XmlNode xmlNode in _configScope.SqlMapConfigDocument.SelectNodes( ApplyDataMapperNamespacePrefix(XML_SQLMAP), _configScope.XmlNamespaceManager))
 			{
 				_configScope.NodeContext = xmlNode;
@@ -901,7 +910,7 @@ namespace IBatisNet.DataMapper.Configuration
 				}
 			}
 			_configScope.ErrorContext.Reset();
-			#endregion 
+			#endregion
 
 			#region Register Trigger Statements for Cache Models
 			foreach (DictionaryEntry entry in _configScope.CacheModelFlushOnExecuteStatements)
@@ -938,7 +947,7 @@ namespace IBatisNet.DataMapper.Configuration
 			}
 			#endregion
 
-			#region Resolve resultMap / Discriminator / PropertyStategy attributes on Result/Argument Property 
+			#region Resolve resultMap / Discriminator / PropertyStategy attributes on Result/Argument Property
 
 			foreach(DictionaryEntry entry in _configScope.SqlMapper.ResultMaps)
 			{
@@ -1012,11 +1021,11 @@ namespace IBatisNet.DataMapper.Configuration
 
 					if (provider.IsDefault)
 					{
-						if (_configScope.Providers[DEFAULT_PROVIDER_NAME] == null) 
+						if (_configScope.Providers[DEFAULT_PROVIDER_NAME] == null)
 						{
 							_configScope.Providers.Add(DEFAULT_PROVIDER_NAME,provider);
-						} 
-						else 
+						}
+						else
 						{
 							throw new ConfigurationException(
 								string.Format("Error while configuring the Provider named \"{0}\" There can be only one default Provider.",provider.Name));
@@ -1082,15 +1091,15 @@ namespace IBatisNet.DataMapper.Configuration
 
 			if (_configScope.UseConfigFileWatcher)
 			{
-				if (sqlMapNode.Attributes["resource"] != null || sqlMapNode.Attributes["url"] != null) 
-				{ 
+				if (sqlMapNode.Attributes["resource"] != null || sqlMapNode.Attributes["url"] != null)
+				{
 					ConfigWatcherHandler.AddFileToWatch( Resources.GetFileInfo( Resources.GetValueOfNodeResourceUrl(sqlMapNode, _configScope.Properties) ) );
 				}
 			}
 
-			// Load the file 
+			// Load the file
 			_configScope.SqlMapDocument = Resources.GetAsXmlDocument(sqlMapNode, _configScope.Properties);
-			
+
 			if (_configScope.ValidateSqlMap)
 			{
 				ValidateSchema( _configScope.SqlMapDocument.ChildNodes[1], "SqlMap.xsd" );
@@ -1132,7 +1141,7 @@ namespace IBatisNet.DataMapper.Configuration
 			}
 
 			#endregion
-		
+
 			#region Load statements
 
             #region Sql tag
@@ -1144,7 +1153,7 @@ namespace IBatisNet.DataMapper.Configuration
                 SqlDeSerializer.Deserialize(xmlNode, _configScope);
             }
             #endregion
-		    
+
 			#region Statement tag
 			Statement statement;
 			foreach (XmlNode xmlNode in _configScope.SqlMapDocument.SelectNodes( ApplyMappingNamespacePrefix(XML_STATEMENT), _configScope.XmlNamespaceManager))
@@ -1164,7 +1173,7 @@ namespace IBatisNet.DataMapper.Configuration
 				_configScope.ErrorContext.ObjectId = statement.Id;
 				statement.Initialize( _configScope );
 
-				// Build ISql (analyse sql statement)		
+				// Build ISql (analyse sql statement)
 				ProcessSqlStatement( statement  );
 
 				// Build MappedStatement
@@ -1196,7 +1205,7 @@ namespace IBatisNet.DataMapper.Configuration
                     select.Id = _configScope.ApplyNamespace(select.Id);
 				}
 				_configScope.ErrorContext.ObjectId = select.Id;
-				
+
 				select.Initialize( _configScope );
 
 				if (select.Generate != null)
@@ -1205,7 +1214,7 @@ namespace IBatisNet.DataMapper.Configuration
 				}
 				else
 				{
-					// Build ISql (analyse sql statement)		
+					// Build ISql (analyse sql statement)
 					ProcessSqlStatement( select);
 				}
 
@@ -1258,7 +1267,7 @@ namespace IBatisNet.DataMapper.Configuration
 				_configScope.SqlMapper.AddMappedStatement(mappedStatement.Id, mappedStatement);
 
 				#region statement SelectKey
-				// Set sql statement SelectKey 
+				// Set sql statement SelectKey
 				if (insert.SelectKey != null)
 				{
 					_configScope.ErrorContext.MoreInfo = "loading selectKey tag";
@@ -1274,7 +1283,7 @@ namespace IBatisNet.DataMapper.Configuration
 					// insert.SelectKey.Id = insert.Id + DOT + "SelectKey";
 
 					ProcessSqlStatement(insert.SelectKey);
-					
+
 					// Build MappedStatement
 					mappedStatement = new MappedStatement( _configScope.SqlMapper, insert.SelectKey);
 
@@ -1305,16 +1314,16 @@ namespace IBatisNet.DataMapper.Configuration
 				_configScope.ErrorContext.ObjectId = update.Id;
 				update.Initialize( _configScope );
 
-				// Build ISql (analyse sql statement)	
+				// Build ISql (analyse sql statement)
 				if (update.Generate != null)
 				{
 					GenerateCommandText(_configScope, update);
 				}
 				else
 				{
-					// Build ISql (analyse sql statement)		
+					// Build ISql (analyse sql statement)
 					ProcessSqlStatement(update);
-				}	
+				}
 
 				// Build MappedStatement
 				mappedStatement = new UpdateMappedStatement( _configScope.SqlMapper, update);
@@ -1350,9 +1359,9 @@ namespace IBatisNet.DataMapper.Configuration
 				}
 				else
 				{
-					// Build ISql (analyse sql statement)		
+					// Build ISql (analyse sql statement)
 					ProcessSqlStatement(delete);
-				}	
+				}
 
 				// Build MappedStatement
 				mappedStatement = new DeleteMappedStatement( _configScope.SqlMapper, delete);
@@ -1385,7 +1394,7 @@ namespace IBatisNet.DataMapper.Configuration
 
 				// Build MappedStatement
                 MappedStatement mappedStatement = new MappedStatement(_configScope.SqlMapper, procedure);
-                IMappedStatement mapStatement = mappedStatement;		    
+                IMappedStatement mapStatement = mappedStatement;
                 if (procedure.CacheModelName != null && procedure.CacheModelName.Length > 0 && _configScope.IsCacheModelsEnabled)
                 {
                     mapStatement = new CachingStatement(mappedStatement);
@@ -1413,7 +1422,7 @@ namespace IBatisNet.DataMapper.Configuration
 						string statementName = flushOn.Attributes["statement"].Value;
 						if (_configScope.UseStatementNamespaces)
 						{
-                            statementName = _configScope.ApplyNamespace(statementName); 
+                            statementName = _configScope.ApplyNamespace(statementName);
 						}
 
 						// delay registering statements to cache model until all sqlMap files have been processed
@@ -1431,7 +1440,7 @@ namespace IBatisNet.DataMapper.Configuration
 					{
 						string name = propertie.Attributes["name"].Value;
 						string value = propertie.Attributes["value"].Value;
-					
+
 						cacheModel.AddProperty(name, value);
 					}
 
@@ -1462,7 +1471,7 @@ namespace IBatisNet.DataMapper.Configuration
 			{
 				Console.Write("tt");
 			}
-			
+
 			_configScope.ErrorContext.MoreInfo = "process the Sql statement";
 
 			// Resolve "extend" attribute on Statement
@@ -1484,18 +1493,18 @@ namespace IBatisNet.DataMapper.Configuration
 
 			isDynamic = ParseDynamicTags( commandTextNode, dynamic, sqlBuffer, isDynamic, false, statement);
 
-			if (isDynamic) 
+			if (isDynamic)
 			{
 				statement.Sql = dynamic;
-			} 
-			else 
-			{	
+			}
+			else
+			{
 				string sqlText = sqlBuffer.ToString();
 				ApplyInlineParemeterMap( statement, sqlText);
 			}
 		}
 
-				
+
 		/// <summary>
 		/// Parse dynamic tags
 		/// </summary>
@@ -1506,12 +1515,12 @@ namespace IBatisNet.DataMapper.Configuration
 		/// <param name="postParseRequired"></param>
 		/// <param name="statement"></param>
 		/// <returns></returns>
-		private bool ParseDynamicTags( XmlNode commandTextNode, IDynamicParent dynamic, 
-			StringBuilder sqlBuffer, bool isDynamic, bool postParseRequired, IStatement statement) 
+		private bool ParseDynamicTags( XmlNode commandTextNode, IDynamicParent dynamic,
+			StringBuilder sqlBuffer, bool isDynamic, bool postParseRequired, IStatement statement)
 		{
 			XmlNodeList children = commandTextNode.ChildNodes;
 			int count = children.Count;
-			for (int i = 0; i < count; i++) 
+			for (int i = 0; i < count; i++)
 			{
 				XmlNode child = children[i];
 				if ( (child.NodeType == XmlNodeType.CDATA) || (child.NodeType == XmlNodeType.Text) )
@@ -1521,12 +1530,12 @@ namespace IBatisNet.DataMapper.Configuration
 					data = NodeUtils.ParsePropertyTokens(data, _configScope.Properties);
 
 					SqlText sqlText;
-					if (postParseRequired) 
+					if (postParseRequired)
 					{
 						sqlText = new SqlText();
 						sqlText.Text = data.ToString();
-					} 
-					else 
+					}
+					else
 					{
 						sqlText = _paramParser.ParseInlineParameterMap(_configScope, null, data );
 					}
@@ -1556,7 +1565,7 @@ namespace IBatisNet.DataMapper.Configuration
 					string nodeName = child.Name;
 					IDeSerializer serializer = _deSerializerFactory.GetDeSerializer(nodeName);
 
-					if (serializer != null) 
+					if (serializer != null)
 					{
 						isDynamic = true;
 						SqlTag tag;
@@ -1565,7 +1574,7 @@ namespace IBatisNet.DataMapper.Configuration
 
 						dynamic.AddChild(tag);
 
-						if (child.HasChildNodes) 
+						if (child.HasChildNodes)
 						{
 							isDynamic = ParseDynamicTags( child, tag, sqlBuffer, isDynamic, tag.Handler.IsPostParseRequired, statement );
 						}
@@ -1595,7 +1604,7 @@ namespace IBatisNet.DataMapper.Configuration
 			{
 				// Build a Parametermap with the inline parameters.
 				// if they exist. Then delete inline infos from sqltext.
-				
+
 				SqlText sqlText = _paramParser.ParseInlineParameterMap(_configScope,  statement, newSql );
 
 				if (sqlText.Parameters.Length > 0)
@@ -1607,13 +1616,13 @@ namespace IBatisNet.DataMapper.Configuration
 						map.Class = statement.ParameterClass;
 					}
 					map.Initialize(_configScope.DataSource.DbProvider.UsePositionalParameters,_configScope);
-					if (statement.ParameterClass==null && 
+					if (statement.ParameterClass==null &&
 						sqlText.Parameters.Length==1 && sqlText.Parameters[0].PropertyName=="value")//#value# parameter with no parameterClass attribut
 					{
 						map.DataExchange = _configScope.DataExchangeFactory.GetDataExchangeForClass( typeof(int) );//Get the primitiveDataExchange
 					}
-					statement.ParameterMap = map;	
-				
+					statement.ParameterMap = map;
+
 					int lenght = sqlText.Parameters.Length;
 					for(int index=0;index<lenght;index++)
 					{
@@ -1627,11 +1636,15 @@ namespace IBatisNet.DataMapper.Configuration
 
 			newSql = newSql.Trim();
 
-			if (SimpleDynamicSql.IsSimpleDynamicSql(newSql)) 
+			if (SimpleDynamicSql.IsSimpleDynamicSql(newSql))
 			{
+				if (!_configScope.AllowInlineSqlParameters)
+				{
+					throw new ConfigurationException("Inline SQL substitution is disabled for statement '" + statement.Id + "'. Replace $...$ value substitutions with #...# parameters, or allow-list identifiers before enabling allowInlineSqlParameters.");
+				}
 				sql = new SimpleDynamicSql(_configScope, newSql, statement);
-			} 
-			else 
+			}
+			else
 			{
 				if (statement is Procedure)
 				{
@@ -1646,14 +1659,14 @@ namespace IBatisNet.DataMapper.Configuration
 					ISqlMapSession session = new SqlMapSession(_configScope.SqlMapper);
 
 					((StaticSql)sql).BuildPreparedStatement( session, newSql );
-				}					
+				}
 			}
 			statement.Sql = sql;
 		}
 
 		#endregion
 
-		
+
 		/// <summary>
 		/// Initialize the list of variables defined in the
 		/// properties file.
@@ -1662,7 +1675,7 @@ namespace IBatisNet.DataMapper.Configuration
 		{
 			XmlNode nodeProperties = _configScope.NodeContext.SelectSingleNode( ApplyDataMapperNamespacePrefix(XML_PROPERTIES), _configScope.XmlNamespaceManager);
 			_configScope.ErrorContext.Activity = "loading global properties";
-			
+
 			if (nodeProperties != null)
 			{
 				if (nodeProperties.HasChildNodes)
@@ -1684,8 +1697,8 @@ namespace IBatisNet.DataMapper.Configuration
 						else
 						{
 							// Load the file defined by the attribute
-							XmlDocument propertiesConfig = Resources.GetAsXmlDocument(propertyNode, _configScope.Properties); 
-							
+							XmlDocument propertiesConfig = Resources.GetAsXmlDocument(propertyNode, _configScope.Properties);
+
 							foreach (XmlNode node in propertiesConfig.SelectNodes( XML_GLOBAL_PROPERTIES, _configScope.XmlNamespaceManager))
 							{
 								_configScope.Properties[node.Attributes[PROPERTY_ELEMENT_KEY_ATTRIB].Value] = node.Attributes[PROPERTY_ELEMENT_VALUE_ATTRIB].Value;
@@ -1700,14 +1713,14 @@ namespace IBatisNet.DataMapper.Configuration
 				}
 				else
 				{
-					// JIRA-38 Fix 
+					// JIRA-38 Fix
 					// <properties> element's InnerXml is currently an empty string anyway
 					// since <settings> are in properties file
 
 					_configScope.ErrorContext.Resource = nodeProperties.OuterXml.ToString();
 
 					// Load the file defined by the attribute
-					XmlDocument propertiesConfig = Resources.GetAsXmlDocument(nodeProperties, _configScope.Properties); 
+					XmlDocument propertiesConfig = Resources.GetAsXmlDocument(nodeProperties, _configScope.Properties);
 
 					foreach (XmlNode node in propertiesConfig.SelectNodes( XML_SETTINGS_ADD ) )
 					{
@@ -1717,7 +1730,7 @@ namespace IBatisNet.DataMapper.Configuration
 						{
 							_logger.Debug( string.Format("Add property \"{0}\" value \"{1}\"",node.Attributes[PROPERTY_ELEMENT_KEY_ATTRIB].Value,node.Attributes[PROPERTY_ELEMENT_VALUE_ATTRIB].Value) );
 						}
-					}					
+					}
 				}
 			}
 			_configScope.ErrorContext.Reset();
@@ -1744,7 +1757,7 @@ namespace IBatisNet.DataMapper.Configuration
 			statement.Sql = sql;
 		}
 
-		
+
 		/// <summary>
 		/// Build a ParameterMap
 		/// </summary>
@@ -1831,7 +1844,7 @@ namespace IBatisNet.DataMapper.Configuration
 
 				if (resultMap.ExtendMap!=null && resultMap.ExtendMap.Length >0)
 				{
-					IResultMap superMap = null;			    
+					IResultMap superMap = null;
 					// Did we already build Extend ResultMap?
 					if (_configScope.SqlMapper.ResultMaps.Contains( resultMap.ExtendMap ) == false)
 					{
@@ -1869,7 +1882,7 @@ namespace IBatisNet.DataMapper.Configuration
                             resultMap.GroupByPropertyNames.Add(superMap.GroupByPropertyNames[i]);
                         }
                     }
-                    // Add constructor arguments 
+                    // Add constructor arguments
                     if (resultMap.Parameters.Count == 0)
                     {
                        for (int i = 0; i < superMap.Parameters.Count; i++)
@@ -1910,7 +1923,7 @@ namespace IBatisNet.DataMapper.Configuration
 		/// <returns>A resource stream.</returns>
 		public Stream GetStream( string schemaResourceKey )
 		{
-			return Assembly.GetExecutingAssembly().GetManifestResourceStream("IBatisNet.DataMapper." + schemaResourceKey); 
+			return Assembly.GetExecutingAssembly().GetManifestResourceStream("IBatisNet.DataMapper." + schemaResourceKey);
 		}
 
 

@@ -4,23 +4,23 @@
  * $Header: $
  * $Revision: 576082 $
  * $Date: 2007-09-16 06:04:01 -0600 (Sun, 16 Sep 2007) $
- * 
+ *
  * iBATIS.NET Data Mapper
  * Copyright (C) 2004 - Gilles Bayon
- *  
- * 
+ *
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- * 
+ *
  ********************************************************************************/
 #endregion
 
@@ -55,7 +55,7 @@ namespace IBatisNet.DataMapper.Scope
 
 
 		#region Fields
-		
+
 		private ErrorContext _errorContext = null;
 		private HybridDictionary _providers = new HybridDictionary();
         private HybridDictionary _sqlIncludes = new HybridDictionary();
@@ -71,6 +71,7 @@ namespace IBatisNet.DataMapper.Scope
 		private bool _isCacheModelsEnabled = false;
 		private bool _useReflectionOptimizer = true;
 		private bool _validateSqlMap = false;
+		private bool _allowInlineSqlParameters = true;
 		private bool _isCallFromDao = false;
 
         private ISqlMapper _sqlMapper = null;
@@ -81,7 +82,7 @@ namespace IBatisNet.DataMapper.Scope
 		private HybridDictionary _cacheModelFlushOnExecuteStatements = new HybridDictionary();
 
 		#endregion
-	
+
 		#region Constructors
 
 		/// <summary>
@@ -93,7 +94,7 @@ namespace IBatisNet.DataMapper.Scope
 
 			_providers.Clear();
 		}
-		#endregion 
+		#endregion
 
 		#region Properties
 
@@ -104,7 +105,7 @@ namespace IBatisNet.DataMapper.Scope
         {
             get { return _sqlIncludes; }
         }
-	    
+
 		/// <summary>
 		/// XmlNamespaceManager
 		/// </summary>
@@ -113,7 +114,7 @@ namespace IBatisNet.DataMapper.Scope
 			set { _nsmgr = value; }
 			get { return _nsmgr; }
 		}
-		
+
 		/// <summary>
 		/// Set if the parser should validate the sqlMap documents
 		/// </summary>
@@ -124,7 +125,17 @@ namespace IBatisNet.DataMapper.Scope
 		}
 
 		/// <summary>
-		/// Tells us if the xml configuration file validate the schema 
+		/// Allows raw $...$ substitution in SQL maps. Disable this in hardened
+		/// applications that only accept parameterized #...# values.
+		/// </summary>
+		public bool AllowInlineSqlParameters
+		{
+			set { _allowInlineSqlParameters = value; }
+			get { return _allowInlineSqlParameters; }
+		}
+
+		/// <summary>
+		/// Tells us if the xml configuration file validate the schema
 		/// </summary>
 		public bool IsXmlValid
 		{
@@ -231,7 +242,7 @@ namespace IBatisNet.DataMapper.Scope
 			set { _useStatementNamespaces = value; }
 			get { return _useStatementNamespaces; }
 		}
-		
+
 		/// <summary>
 		///  Get the request's error context
 		/// </summary>
@@ -274,7 +285,7 @@ namespace IBatisNet.DataMapper.Scope
 			set { _cacheModelFlushOnExecuteStatements = value; }
 		}
 
-		#endregion 
+		#endregion
 
         /// <summary>
         /// Register under Statement Name or Fully Qualified Statement Name
@@ -309,39 +320,39 @@ namespace IBatisNet.DataMapper.Scope
 			{
                 handler = this.DataExchangeFactory.TypeHandlerFactory.GetUnkownTypeHandler();
 			}
-			else if (typeof(IDictionary).IsAssignableFrom(clazz)) 
+			else if (typeof(IDictionary).IsAssignableFrom(clazz))
 			{
 				// IDictionary
-				if (clrType ==null ||clrType.Length == 0) 
+				if (clrType ==null ||clrType.Length == 0)
 				{
-                    handler = this.DataExchangeFactory.TypeHandlerFactory.GetUnkownTypeHandler(); 
-				} 
-				else 
+                    handler = this.DataExchangeFactory.TypeHandlerFactory.GetUnkownTypeHandler();
+				}
+				else
 				{
-					try 
+					try
 					{
 						Type type = TypeUtils.ResolveType(clrType);
                         handler = this.DataExchangeFactory.TypeHandlerFactory.GetTypeHandler(type, dbType);
-					} 
-					catch (Exception e) 
+					}
+					catch (Exception e)
 					{
 #if dotnet2
                         throw new ConfigurationErrorsException("Error. Could not set TypeHandler.  Cause: " + e.Message, e);
-#else       
+#else
                        throw new ConfigurationException("Error. Could not set TypeHandler.  Cause: " + e.Message, e);
 #endif
                     }
 				}
 			}
-            else if (this.DataExchangeFactory.TypeHandlerFactory.GetTypeHandler(clazz, dbType) != null) 
+            else if (this.DataExchangeFactory.TypeHandlerFactory.GetTypeHandler(clazz, dbType) != null)
 			{
 				// Primitive
                 handler = this.DataExchangeFactory.TypeHandlerFactory.GetTypeHandler(clazz, dbType);
 			}
-			else 
+			else
 			{
 				// .NET object
-				if (clrType ==null || clrType.Length == 0) 
+				if (clrType ==null || clrType.Length == 0)
 				{
 					Type type = null;
 					if (forSetter)
@@ -350,22 +361,22 @@ namespace IBatisNet.DataMapper.Scope
 					}
 					else
 					{
-						type = ObjectProbe.GetMemberTypeForGetter(clazz, memberName);	
+						type = ObjectProbe.GetMemberTypeForGetter(clazz, memberName);
 					}
                     handler = this.DataExchangeFactory.TypeHandlerFactory.GetTypeHandler(type, dbType);
-				} 
-				else 
+				}
+				else
 				{
-					try 
+					try
 					{
 						Type type = TypeUtils.ResolveType(clrType);
                         handler = this.DataExchangeFactory.TypeHandlerFactory.GetTypeHandler(type, dbType);
-					} 
-					catch (Exception e) 
+					}
+					catch (Exception e)
 					{
 #if dotnet2
                         throw new ConfigurationErrorsException("Error. Could not set TypeHandler.  Cause: " + e.Message, e);
-#else       
+#else
                        throw new ConfigurationException("Error. Could not set TypeHandler.  Cause: " + e.Message, e);
 #endif
 					}

@@ -59,7 +59,7 @@ public sealed partial class SqlMapAnalyzer
         XDocument config;
         try
         {
-            config = XDocument.Load(configPath, LoadOptions.SetLineInfo | LoadOptions.PreserveWhitespace);
+            config = LoadSafeXDocument(configPath, LoadOptions.SetLineInfo | LoadOptions.PreserveWhitespace);
         }
         catch (Exception ex)
         {
@@ -208,7 +208,7 @@ public sealed partial class SqlMapAnalyzer
 
         try
         {
-            var doc = XDocument.Load(resolved, LoadOptions.SetLineInfo);
+            var doc = LoadSafeXDocument(resolved, LoadOptions.SetLineInfo);
             foreach (var add in doc.Descendants().Where(x => x.Name.LocalName == "add"))
             {
                 var key = Attr(add, "key") ?? Attr(add, "name");
@@ -261,7 +261,7 @@ public sealed partial class SqlMapAnalyzer
 
         try
         {
-            var doc = XDocument.Load(resolved, LoadOptions.SetLineInfo | LoadOptions.PreserveWhitespace);
+            var doc = LoadSafeXDocument(resolved, LoadOptions.SetLineInfo | LoadOptions.PreserveWhitespace);
             var mapNamespace = Attr(doc.Root, "namespace");
             var fileStatements = new List<StatementItem>();
 
@@ -290,6 +290,7 @@ public sealed partial class SqlMapAnalyzer
                 var resultMap = ResolveRef(Attr(element, "resultMap"), mapNamespace, useStatementNamespaces);
                 var parameterMap = ResolveRef(Attr(element, "parameterMap"), mapNamespace, useStatementNamespaces);
                 var template = InnerXml(element).Trim();
+                var inlineSubstitutions = ExtractInlineSubstitutions(template);
                 var includes = element.Descendants()
                     .Where(x => x.Name.LocalName.Equals("include", StringComparison.OrdinalIgnoreCase))
                     .Select(x => ResolveRef(Attr(x, "refid") ?? Attr(x, "refId") ?? "", mapNamespace, useStatementNamespaces))
@@ -307,6 +308,7 @@ public sealed partial class SqlMapAnalyzer
                     resultMap,
                     template,
                     ExtractParameters(template),
+                    inlineSubstitutions,
                     includes);
 
                 fileStatements.Add(item);
@@ -324,6 +326,15 @@ public sealed partial class SqlMapAnalyzer
                 if (!string.IsNullOrWhiteSpace(parameterMap) && !parameterMaps.Contains(parameterMap))
                 {
                     diagnostics.Add(new DiagnosticItem("Warning", $"parameterMap '{parameterMap}' was not found in the same map file.", resolved, id));
+                }
+
+                foreach (var substitution in inlineSubstitutions)
+                {
+                    diagnostics.Add(new DiagnosticItem(
+                        "Security",
+                        $"SQL injection risk: '${substitution}$' injects raw text into the SQL statement. Use '#{substitution}#' for values, or allow-list identifier/order-by values before using inline substitution.",
+                        resolved,
+                        string.IsNullOrWhiteSpace(id) ? Line(element) : id));
                 }
             }
 
@@ -374,7 +385,13 @@ public sealed partial class SqlMapAnalyzer
         ICollection<DiagnosticItem> diagnostics,
         string? filePath)
     {
-        var resolved = ResolveValue(value, properties, diagnostics, filePath)
+        var resolvedValue = ResolveValue(value, properties, diagnostics, filePath);
+        if (TryGetLocalFilePathFromUri(resolvedValue, out var localFilePath))
+        {
+            return NormalizePath(localFilePath);
+        }
+
+        var resolved = resolvedValue
             .Replace('/', Path.DirectorySeparatorChar)
             .Replace('\\', Path.DirectorySeparatorChar);
 
@@ -397,7 +414,13 @@ public sealed partial class SqlMapAnalyzer
         ICollection<DiagnosticItem> diagnostics,
         string? filePath)
     {
-        var resolved = ResolveValue(value, properties, diagnostics, filePath)
+        var resolvedValue = ResolveValue(value, properties, diagnostics, filePath);
+        if (TryGetLocalFilePathFromUri(resolvedValue, out var localFilePath))
+        {
+            return NormalizePath(localFilePath);
+        }
+
+        var resolved = resolvedValue
             .Replace('/', Path.DirectorySeparatorChar)
             .Replace('\\', Path.DirectorySeparatorChar);
 
@@ -412,11 +435,35 @@ public sealed partial class SqlMapAnalyzer
     private static IReadOnlyList<string> ExtractParameters(string sqlTemplate)
     {
         return ParameterRegex().Matches(sqlTemplate)
+            .Where(x => x.Groups[1].Value == "#")
             .Select(x => x.Groups[2].Value.Split(',')[0].Trim())
             .Where(x => !string.IsNullOrWhiteSpace(x))
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .OrderBy(x => x)
             .ToList();
+    }
+
+    private static IReadOnlyList<string> ExtractInlineSubstitutions(string sqlTemplate)
+    {
+        return ParameterRegex().Matches(sqlTemplate)
+            .Where(x => x.Groups[1].Value == "$")
+            .Select(x => x.Groups[2].Value.Split(',')[0].Trim())
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(x => x)
+            .ToList();
+    }
+
+    private static XDocument LoadSafeXDocument(string path, LoadOptions options)
+    {
+        var settings = new XmlReaderSettings
+        {
+            DtdProcessing = DtdProcessing.Prohibit,
+            XmlResolver = null
+        };
+
+        using var reader = XmlReader.Create(path, settings);
+        return XDocument.Load(reader, options);
     }
 
     private static string InnerXml(XElement element)
@@ -470,6 +517,18 @@ public sealed partial class SqlMapAnalyzer
         }
 
         return QualifyId(id, mapNamespace, useStatementNamespaces);
+    }
+
+    private static bool TryGetLocalFilePathFromUri(string value, out string localFilePath)
+    {
+        localFilePath = "";
+        if (Uri.TryCreate(value, UriKind.Absolute, out var uri) && uri.IsFile)
+        {
+            localFilePath = uri.LocalPath;
+            return true;
+        }
+
+        return false;
     }
 
     private static string Line(XElement element)
