@@ -222,6 +222,10 @@ jobs:
             $isPrerelease = $releaseTag.StartsWith("test-v") -or $version.Contains("-")
             "releaseTag=$releaseTag" >> $env:GITHUB_OUTPUT
             "isPrerelease=$($isPrerelease.ToString().ToLowerInvariant())" >> $env:GITHUB_OUTPUT
+          } elseif ("${{ github.ref }}" -eq "refs/heads/master" -and "${{ github.event_name }}" -eq "push") {
+            $releaseTag = "ci-v$version" -replace '[^0-9A-Za-z._-]', '-'
+            "releaseTag=$releaseTag" >> $env:GITHUB_OUTPUT
+            "isPrerelease=true" >> $env:GITHUB_OUTPUT
           } else {
             "releaseTag=" >> $env:GITHUB_OUTPUT
             "isPrerelease=false" >> $env:GITHUB_OUTPUT
@@ -396,7 +400,7 @@ jobs:
             dotnet nuget push $_.FullName --api-key "$env:NUGET_TEST_API_KEY" --source "https://apiint.nugettest.org/v3/index.json" --skip-duplicate
           }
 
-      - name: Publish GitHub release for package tags
+      - name: Publish GitHub release
         if: steps.publish.outputs.shouldPublish == 'true' && steps.publish.outputs.releaseTag != ''
         shell: pwsh
         env:
@@ -421,7 +425,7 @@ jobs:
           } else {
             $arguments = @("release", "create", $tag)
             $arguments += $assets
-            $arguments += @("--title", $title, "--notes-file", $notesPath)
+            $arguments += @("--target", "${{ github.sha }}", "--title", $title, "--notes-file", $notesPath)
             if ($isPrerelease) {
               $arguments += "--prerelease"
             }

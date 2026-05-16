@@ -88,7 +88,8 @@ GitHub Actions:
 - `CI` publishes a Windows x64 portable build of the XML Debugger and uploads it
   with the build artifacts.
 - `CI` automatically packs and publishes to GitHub Packages on pushes to
-  `master` using an auto-generated prerelease version.
+  `master` using an auto-generated prerelease version, then creates or updates a
+  matching GitHub prerelease.
 - `CI` packs and publishes to NuGet.org and GitHub Packages when a `v*` tag is
   pushed, then creates or updates the matching GitHub Release with the NuGet
   package, release notes, and XML Debugger portable build.
@@ -121,8 +122,9 @@ git tag test-v1.6.2-xdev.10
 git push origin test-v1.6.2-xdev.10
 ```
 
-Pushes to `master` continue to publish GitHub Packages with an automatically
-generated prerelease version based on the nuspec base version and commit count.
+Pushes to `master` also create GitHub prereleases automatically. The generated
+tag uses the auto package version, for example `ci-v1.6.2-xdev.37`, and points
+at the pushed commit.
 
 ## Baseline Notes
 

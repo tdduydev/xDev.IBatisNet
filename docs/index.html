@@ -174,7 +174,8 @@ git push origin test-v1.6.2-xdev.10</code></pre>
           <h3>Tự động tăng version</h3>
           <p>
             Khi push vào <code>master</code>, workflow tạo prerelease version từ version nền trong
-            <code>xDev.IBatisNet.nuspec</code> và commit count hiện tại, rồi publish lên GitHub Packages.
+            <code>xDev.IBatisNet.nuspec</code> và commit count hiện tại, rồi publish lên GitHub Packages
+            và tạo GitHub prerelease tự động với tag dạng <code>ci-v1.6.2-xdev.37</code>.
             Khi chạy workflow thủ công, có thể để trống package version để dùng cùng cơ chế tự động.
           </p>
 
@@ -187,8 +188,8 @@ git push origin test-v1.6.2-xdev.10</code></pre>
           </ul>
 
           <div class="notice">
-            GitHub Release chỉ được tạo cho tag <code>v*</code> hoặc <code>test-v*</code>. Build từ
-            <code>master</code> vẫn publish package prerelease nhưng không tạo Release mới để tránh làm nhiễu trang Releases.
+            Push lên <code>master</code> tạo prerelease tự động. Tag <code>v*</code> vẫn là production
+            release, còn tag <code>test-v*</code> là test prerelease có kiểm soát.
           </div>
         </section>
 
