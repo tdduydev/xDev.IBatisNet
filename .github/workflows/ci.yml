@@ -259,6 +259,36 @@ jobs:
           if ("${{ steps.publish.outputs.publishNuGetOrg }}" -eq "true") { $feeds += "NuGet.org" }
           if ($feeds.Count -eq 0) { $feeds += "artifact only" }
 
+          function ConvertTo-XmlSafeText {
+            param([string]$Value)
+
+            if ([string]::IsNullOrEmpty($Value)) {
+              return ""
+            }
+
+            $builder = [System.Text.StringBuilder]::new($Value.Length)
+            for ($index = 0; $index -lt $Value.Length; $index++) {
+              $codePoint = [int][char]$Value[$index]
+              if ($codePoint -ge 0xD800 -and $codePoint -le 0xDBFF -and $index + 1 -lt $Value.Length) {
+                $nextCodePoint = [int][char]$Value[$index + 1]
+                if ($nextCodePoint -ge 0xDC00 -and $nextCodePoint -le 0xDFFF) {
+                  [void]$builder.Append($Value[$index])
+                  [void]$builder.Append($Value[$index + 1])
+                  $index++
+                  continue
+                }
+              }
+
+              if ($codePoint -eq 0x9 -or $codePoint -eq 0xA -or $codePoint -eq 0xD -or
+                  ($codePoint -ge 0x20 -and $codePoint -le 0xD7FF) -or
+                  ($codePoint -ge 0xE000 -and $codePoint -le 0xFFFD)) {
+                [void]$builder.Append($Value[$index])
+              }
+            }
+
+            return $builder.ToString()
+          }
+
           $notes = @"
           # xDev.IBatisNet $version
 
@@ -271,9 +301,9 @@ jobs:
 
           $changesText
           "@
-          $notes = $notes.Trim()
+          $notes = ConvertTo-XmlSafeText ($notes.Trim())
 
-          Set-Content $notesPath -Value $notes -NoNewline
+          Set-Content $notesPath -Value $notes -NoNewline -Encoding utf8
 
           [xml]$nuspec = Get-Content xDev.IBatisNet.nuspec -Raw
           $namespace = $nuspec.package.NamespaceURI
@@ -294,11 +324,15 @@ jobs:
           $settings = New-Object System.Xml.XmlWriterSettings
           $settings.Indent = $true
           $settings.Encoding = [System.Text.UTF8Encoding]::new($false)
-          $writer = [System.Xml.XmlWriter]::Create((Resolve-Path xDev.IBatisNet.nuspec).Path, $settings)
+          $settings.CheckCharacters = $true
+          $writer = $null
           try {
+            $writer = [System.Xml.XmlWriter]::Create((Resolve-Path xDev.IBatisNet.nuspec).Path, $settings)
             $nuspec.Save($writer)
           } finally {
-            $writer.Close()
+            if ($null -ne $writer) {
+              $writer.Close()
+            }
           }
 
           "path=$notesPath" >> $env:GITHUB_OUTPUT
