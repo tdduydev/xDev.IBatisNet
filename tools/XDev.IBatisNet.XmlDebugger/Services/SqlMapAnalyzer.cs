@@ -73,6 +73,33 @@ public sealed partial class SqlMapAnalyzer
             };
         }
 
+        if (IsSqlMapRoot(config))
+        {
+            properties.TryAdd("root", root.EndsWith(Path.DirectorySeparatorChar) ? root : root + Path.DirectorySeparatorChar);
+            AnalyzeSqlMapDocument(
+                config,
+                "file",
+                Path.GetFileName(configPath),
+                configPath,
+                useStatementNamespaces: false,
+                sqlMapFiles,
+                statements,
+                sqlFragments,
+                diagnostics);
+            AddStatementReferenceDiagnostics(statements, sqlFragments, diagnostics, configPath);
+
+            return new SqlMapAnalysisResult
+            {
+                ConfigPath = configPath,
+                WorkingRoot = root,
+                Properties = properties.OrderBy(x => x.Key).Select(x => new PropertyItem(x.Key, x.Value)).ToList(),
+                SqlMapFiles = sqlMapFiles,
+                Statements = statements.OrderBy(x => x.Id).ThenBy(x => x.Kind).ToList(),
+                Diagnostics = diagnostics,
+                Elapsed = stopwatch.Elapsed
+            };
+        }
+
         var ns = config.Root?.Name.Namespace ?? XNamespace.None;
         LoadProperties(config, ns, configDir, properties, diagnostics);
         properties.TryAdd("root", root.EndsWith(Path.DirectorySeparatorChar) ? root : root + Path.DirectorySeparatorChar);
@@ -127,31 +154,7 @@ public sealed partial class SqlMapAnalyzer
             AnalyzeSqlMapElement(sqlMap, configDir, root, properties, useStatementNamespaces, sqlMapFiles, statements, sqlFragments, diagnostics);
         }
 
-        foreach (var group in statements.GroupBy(x => x.Id, StringComparer.OrdinalIgnoreCase).Where(x => !string.IsNullOrWhiteSpace(x.Key) && x.Count() > 1))
-        {
-            diagnostics.Add(new DiagnosticItem("Warning", $"Duplicate statement id '{group.Key}' appears {group.Count()} times.", group.First().FilePath));
-        }
-
-        var statementIds = statements
-            .Select(x => x.Id)
-            .Where(x => !string.IsNullOrWhiteSpace(x))
-            .ToHashSet(StringComparer.OrdinalIgnoreCase);
-
-        foreach (var statement in statements)
-        {
-            foreach (var include in statement.Includes)
-            {
-                if (!sqlFragments.ContainsKey(include) && !statementIds.Contains(include))
-                {
-                    diagnostics.Add(new DiagnosticItem("Warning", $"Include refid '{include}' was not found in loaded SQL fragments/statements.", statement.FilePath, statement.Id));
-                }
-            }
-        }
-
-        if (statements.Count == 0 && diagnostics.All(x => x.Severity != "Error"))
-        {
-            diagnostics.Add(new DiagnosticItem("Info", "No statements were found. This can be valid for a base config that loads maps at runtime.", configPath));
-        }
+        AddStatementReferenceDiagnostics(statements, sqlFragments, diagnostics, configPath);
 
         return new SqlMapAnalysisResult
         {
@@ -347,116 +350,184 @@ public sealed partial class SqlMapAnalyzer
             return;
         }
 
+        AnalyzeSqlMapFile(
+            "resource",
+            resource,
+            resolved,
+            useStatementNamespaces,
+            sqlMapFiles,
+            statements,
+            sqlFragments,
+            diagnostics);
+    }
+
+    private static void AnalyzeSqlMapFile(
+        string sourceKind,
+        string source,
+        string resolved,
+        bool useStatementNamespaces,
+        ICollection<SqlMapFileItem> sqlMapFiles,
+        ICollection<StatementItem> statements,
+        IDictionary<string, string> sqlFragments,
+        ICollection<DiagnosticItem> diagnostics)
+    {
         try
         {
             var doc = LoadSafeXDocument(resolved, LoadOptions.SetLineInfo | LoadOptions.PreserveWhitespace);
-            var mapNamespace = Attr(doc.Root, "namespace");
-            var fileStatements = new List<StatementItem>();
-
-            var localSqlFragments = new Dictionary<string, XElement>(StringComparer.OrdinalIgnoreCase);
-            foreach (var sql in doc.Descendants().Where(x => x.Name.LocalName.Equals("sql", StringComparison.OrdinalIgnoreCase)))
-            {
-                var id = QualifyId(Attr(sql, "id") ?? "", mapNamespace, useStatementNamespaces);
-                if (!string.IsNullOrWhiteSpace(id))
-                {
-                    localSqlFragments[id] = sql;
-                    sqlFragments[id] = InnerXml(sql).Trim();
-                }
-            }
-
-            var resultMaps = doc.Descendants().Where(x => x.Name.LocalName == "resultMap")
-                .Select(x => QualifyId(Attr(x, "id") ?? "", mapNamespace, useStatementNamespaces))
-                .Where(x => !string.IsNullOrWhiteSpace(x))
-                .ToHashSet(StringComparer.OrdinalIgnoreCase);
-
-            var parameterMaps = doc.Descendants().Where(x => x.Name.LocalName == "parameterMap")
-                .Select(x => QualifyId(Attr(x, "id") ?? "", mapNamespace, useStatementNamespaces))
-                .Where(x => !string.IsNullOrWhiteSpace(x))
-                .ToHashSet(StringComparer.OrdinalIgnoreCase);
-
-            foreach (var cacheModel in doc.Descendants().Where(x => x.Name.LocalName.Equals("cacheModel", StringComparison.OrdinalIgnoreCase)))
-            {
-                var cacheId = QualifyId(Attr(cacheModel, "id") ?? "", mapNamespace, useStatementNamespaces);
-                if (IsTrue(Attr(cacheModel, "serialize")) && IsFalse(Attr(cacheModel, "readOnly")))
-                {
-                    diagnostics.Add(new DiagnosticItem(
-                        "Security",
-                        "Serializable read-write cache cloning can deserialize cached payloads. Avoid serialize=\"true\" with readOnly=\"false\" on legacy targets, or keep cache data fully trusted.",
-                        resolved,
-                        string.IsNullOrWhiteSpace(cacheId) ? Line(cacheModel) : cacheId));
-                }
-            }
-
-            foreach (var element in doc.Descendants().Where(x => StatementElementNames.Contains(x.Name.LocalName)))
-            {
-                var id = QualifyId(Attr(element, "id") ?? "", mapNamespace, useStatementNamespaces);
-                var resultMap = ResolveRef(Attr(element, "resultMap"), mapNamespace, useStatementNamespaces);
-                var parameterMap = ResolveRef(Attr(element, "parameterMap"), mapNamespace, useStatementNamespaces);
-                var template = InnerXmlWithExpandedIncludes(element, localSqlFragments, mapNamespace, useStatementNamespaces, diagnostics, resolved).Trim();
-                var inlineSubstitutions = ExtractInlineSubstitutions(template);
-                var includes = element.Descendants()
-                    .Where(x => x.Name.LocalName.Equals("include", StringComparison.OrdinalIgnoreCase))
-                    .Select(x => ResolveRef(Attr(x, "refid") ?? Attr(x, "refId") ?? "", mapNamespace, useStatementNamespaces))
-                    .Where(x => !string.IsNullOrWhiteSpace(x))
-                    .Distinct(StringComparer.OrdinalIgnoreCase)
-                    .OrderBy(x => x)
-                    .ToList();
-
-                var item = new StatementItem(
-                    id,
-                    element.Name.LocalName,
-                    resolved,
-                    Attr(element, "parameterClass") ?? parameterMap,
-                    Attr(element, "resultClass"),
-                    resultMap,
-                    template,
-                    ExtractParameters(template),
-                    inlineSubstitutions,
-                    includes);
-
-                fileStatements.Add(item);
-
-                if (string.IsNullOrWhiteSpace(id))
-                {
-                    diagnostics.Add(new DiagnosticItem("Warning", "Statement is missing an id.", resolved, Line(element)));
-                }
-
-                if (!string.IsNullOrWhiteSpace(resultMap) && !resultMaps.Contains(resultMap))
-                {
-                    diagnostics.Add(new DiagnosticItem("Warning", $"resultMap '{resultMap}' was not found in the same map file.", resolved, id));
-                }
-
-                if (!string.IsNullOrWhiteSpace(parameterMap) && !parameterMaps.Contains(parameterMap))
-                {
-                    diagnostics.Add(new DiagnosticItem("Warning", $"parameterMap '{parameterMap}' was not found in the same map file.", resolved, id));
-                }
-
-                foreach (var substitution in inlineSubstitutions)
-                {
-                    diagnostics.Add(new DiagnosticItem(
-                        "Security",
-                        $"SQL injection risk: '${substitution}$' injects raw text into the SQL statement. Use '#{substitution}#' for values, or allow-list identifier/order-by values before using inline substitution.",
-                        resolved,
-                        string.IsNullOrWhiteSpace(id) ? Line(element) : id));
-                }
-            }
-
-            foreach (var item in fileStatements)
-            {
-                statements.Add(item);
-            }
-
-            sqlMapFiles.Add(new SqlMapFileItem("resource", resource, resolved, fileStatements.Count, "Loaded"));
-
-            if (fileStatements.Count == 0)
-            {
-                diagnostics.Add(new DiagnosticItem("Info", "SQL map loaded but contains no executable statements.", resolved));
-            }
+            AnalyzeSqlMapDocument(doc, sourceKind, source, resolved, useStatementNamespaces, sqlMapFiles, statements, sqlFragments, diagnostics);
         }
         catch (Exception ex)
         {
-            sqlMapFiles.Add(new SqlMapFileItem("resource", resource, resolved, 0, "Invalid XML"));
+            sqlMapFiles.Add(new SqlMapFileItem(sourceKind, source, resolved, 0, "Invalid XML"));
             diagnostics.Add(new DiagnosticItem("Error", $"SQL map is not valid XML: {ex.Message}", resolved));
+        }
+    }
+
+    private static void AnalyzeSqlMapDocument(
+        XDocument doc,
+        string sourceKind,
+        string source,
+        string resolved,
+        bool useStatementNamespaces,
+        ICollection<SqlMapFileItem> sqlMapFiles,
+        ICollection<StatementItem> statements,
+        IDictionary<string, string> sqlFragments,
+        ICollection<DiagnosticItem> diagnostics)
+    {
+        var mapNamespace = Attr(doc.Root, "namespace");
+        var fileStatements = new List<StatementItem>();
+
+        var localSqlFragments = new Dictionary<string, XElement>(StringComparer.OrdinalIgnoreCase);
+        foreach (var sql in doc.Descendants().Where(x => x.Name.LocalName.Equals("sql", StringComparison.OrdinalIgnoreCase)))
+        {
+            var id = QualifyId(Attr(sql, "id") ?? "", mapNamespace, useStatementNamespaces);
+            if (!string.IsNullOrWhiteSpace(id))
+            {
+                localSqlFragments[id] = sql;
+                sqlFragments[id] = InnerXml(sql).Trim();
+            }
+        }
+
+        var resultMaps = doc.Descendants().Where(x => x.Name.LocalName == "resultMap")
+            .Select(x => QualifyId(Attr(x, "id") ?? "", mapNamespace, useStatementNamespaces))
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        var parameterMaps = doc.Descendants().Where(x => x.Name.LocalName == "parameterMap")
+            .Select(x => QualifyId(Attr(x, "id") ?? "", mapNamespace, useStatementNamespaces))
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var cacheModel in doc.Descendants().Where(x => x.Name.LocalName.Equals("cacheModel", StringComparison.OrdinalIgnoreCase)))
+        {
+            var cacheId = QualifyId(Attr(cacheModel, "id") ?? "", mapNamespace, useStatementNamespaces);
+            if (IsTrue(Attr(cacheModel, "serialize")) && IsFalse(Attr(cacheModel, "readOnly")))
+            {
+                diagnostics.Add(new DiagnosticItem(
+                    "Security",
+                    "Serializable read-write cache cloning can deserialize cached payloads. Avoid serialize=\"true\" with readOnly=\"false\" on legacy targets, or keep cache data fully trusted.",
+                    resolved,
+                    string.IsNullOrWhiteSpace(cacheId) ? Line(cacheModel) : cacheId));
+            }
+        }
+
+        foreach (var element in doc.Descendants().Where(x => StatementElementNames.Contains(x.Name.LocalName)))
+        {
+            var id = QualifyId(Attr(element, "id") ?? "", mapNamespace, useStatementNamespaces);
+            var resultMap = ResolveRef(Attr(element, "resultMap"), mapNamespace, useStatementNamespaces);
+            var parameterMap = ResolveRef(Attr(element, "parameterMap"), mapNamespace, useStatementNamespaces);
+            var template = InnerXmlWithExpandedIncludes(element, localSqlFragments, mapNamespace, useStatementNamespaces, diagnostics, resolved).Trim();
+            var inlineSubstitutions = ExtractInlineSubstitutions(template);
+            var includes = element.Descendants()
+                .Where(x => x.Name.LocalName.Equals("include", StringComparison.OrdinalIgnoreCase))
+                .Select(x => ResolveRef(Attr(x, "refid") ?? Attr(x, "refId") ?? "", mapNamespace, useStatementNamespaces))
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .OrderBy(x => x)
+                .ToList();
+
+            var item = new StatementItem(
+                id,
+                element.Name.LocalName,
+                resolved,
+                Attr(element, "parameterClass") ?? parameterMap,
+                Attr(element, "resultClass"),
+                resultMap,
+                template,
+                ExtractParameters(template),
+                inlineSubstitutions,
+                includes);
+
+            fileStatements.Add(item);
+
+            if (string.IsNullOrWhiteSpace(id))
+            {
+                diagnostics.Add(new DiagnosticItem("Warning", "Statement is missing an id.", resolved, Line(element)));
+            }
+
+            if (!string.IsNullOrWhiteSpace(resultMap) && !resultMaps.Contains(resultMap))
+            {
+                diagnostics.Add(new DiagnosticItem("Warning", $"resultMap '{resultMap}' was not found in the same map file.", resolved, id));
+            }
+
+            if (!string.IsNullOrWhiteSpace(parameterMap) && !parameterMaps.Contains(parameterMap))
+            {
+                diagnostics.Add(new DiagnosticItem("Warning", $"parameterMap '{parameterMap}' was not found in the same map file.", resolved, id));
+            }
+
+            foreach (var substitution in inlineSubstitutions)
+            {
+                diagnostics.Add(new DiagnosticItem(
+                    "Security",
+                    $"SQL injection risk: '${substitution}$' injects raw text into the SQL statement. Use '#{substitution}#' for values, or allow-list identifier/order-by values before using inline substitution.",
+                    resolved,
+                    string.IsNullOrWhiteSpace(id) ? Line(element) : id));
+            }
+        }
+
+        foreach (var item in fileStatements)
+        {
+            statements.Add(item);
+        }
+
+        sqlMapFiles.Add(new SqlMapFileItem(sourceKind, source, resolved, fileStatements.Count, "Loaded"));
+
+        if (fileStatements.Count == 0)
+        {
+            diagnostics.Add(new DiagnosticItem("Info", "SQL map loaded but contains no executable statements.", resolved));
+        }
+    }
+
+    private static void AddStatementReferenceDiagnostics(
+        ICollection<StatementItem> statements,
+        IReadOnlyDictionary<string, string> sqlFragments,
+        ICollection<DiagnosticItem> diagnostics,
+        string configPath)
+    {
+        foreach (var group in statements.GroupBy(x => x.Id, StringComparer.OrdinalIgnoreCase).Where(x => !string.IsNullOrWhiteSpace(x.Key) && x.Count() > 1))
+        {
+            diagnostics.Add(new DiagnosticItem("Warning", $"Duplicate statement id '{group.Key}' appears {group.Count()} times.", group.First().FilePath));
+        }
+
+        var statementIds = statements
+            .Select(x => x.Id)
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var statement in statements)
+        {
+            foreach (var include in statement.Includes)
+            {
+                if (!sqlFragments.ContainsKey(include) && !statementIds.Contains(include))
+                {
+                    diagnostics.Add(new DiagnosticItem("Warning", $"Include refid '{include}' was not found in loaded SQL fragments/statements.", statement.FilePath, statement.Id));
+                }
+            }
+        }
+
+        if (statements.Count == 0 && diagnostics.All(x => x.Severity != "Error"))
+        {
+            diagnostics.Add(new DiagnosticItem("Info", "No statements were found. This can be valid for a base config that loads maps at runtime.", configPath));
         }
     }
 
@@ -591,6 +662,11 @@ public sealed partial class SqlMapAnalyzer
 
         using var reader = XmlReader.Create(path, settings);
         return XDocument.Load(reader, options);
+    }
+
+    private static bool IsSqlMapRoot(XDocument document)
+    {
+        return document.Root?.Name.LocalName.Equals("sqlMap", StringComparison.OrdinalIgnoreCase) == true;
     }
 
     private static string InnerXml(XElement element)

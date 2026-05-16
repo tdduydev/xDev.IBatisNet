@@ -18,7 +18,7 @@ public partial class MainWindow : Window
     {
         var files = await StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
         {
-            Title = "Open SqlMap.config",
+            Title = "Open SqlMap.config or SQL map XML",
             AllowMultiple = false,
             FileTypeFilter =
             [

@@ -22,6 +22,36 @@
             </summary>
             <param name="log"></param>
         </member>
+        <member name="P:IBatisNet.Common.Logging.Impl.Log4NetLogger.IsInfoEnabled">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="P:IBatisNet.Common.Logging.Impl.Log4NetLogger.IsWarnEnabled">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="P:IBatisNet.Common.Logging.Impl.Log4NetLogger.IsErrorEnabled">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="P:IBatisNet.Common.Logging.Impl.Log4NetLogger.IsFatalEnabled">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="P:IBatisNet.Common.Logging.Impl.Log4NetLogger.IsDebugEnabled">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="P:IBatisNet.Common.Logging.Impl.Log4NetLogger.IsTraceEnabled">
+            <summary>
+            
+            </summary>
+        </member>
         <member name="M:IBatisNet.Common.Logging.Impl.Log4NetLogger.Info(System.Object,System.Exception)">
             <summary>
             
@@ -99,36 +129,6 @@
             
             </summary>
             <param name="message"></param>
-        </member>
-        <member name="P:IBatisNet.Common.Logging.Impl.Log4NetLogger.IsInfoEnabled">
-            <summary>
-            
-            </summary>
-        </member>
-        <member name="P:IBatisNet.Common.Logging.Impl.Log4NetLogger.IsWarnEnabled">
-            <summary>
-            
-            </summary>
-        </member>
-        <member name="P:IBatisNet.Common.Logging.Impl.Log4NetLogger.IsErrorEnabled">
-            <summary>
-            
-            </summary>
-        </member>
-        <member name="P:IBatisNet.Common.Logging.Impl.Log4NetLogger.IsFatalEnabled">
-            <summary>
-            
-            </summary>
-        </member>
-        <member name="P:IBatisNet.Common.Logging.Impl.Log4NetLogger.IsDebugEnabled">
-            <summary>
-            
-            </summary>
-        </member>
-        <member name="P:IBatisNet.Common.Logging.Impl.Log4NetLogger.IsTraceEnabled">
-            <summary>
-            
-            </summary>
         </member>
         <member name="T:IBatisNet.Common.Logging.Impl.Log4NetLoggerFA">
             <summary>

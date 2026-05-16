@@ -18,6 +18,7 @@ internal static class Program
         ("XML loaders reject DTD/XXE", XmlLoadersRejectDtd),
         ("Sensitive strings are redacted", SensitiveStringsAreRedacted),
         ("Analyzer flags inline SQL substitution", AnalyzerFlagsInlineSqlSubstitution),
+        ("Analyzer reads direct SQL map XML", AnalyzerReadsDirectSqlMapXml),
         ("Analyzer flags risky compatibility settings", AnalyzerFlagsRiskyCompatibilitySettings),
         ("Analyzer flags legacy serializable cache cloning", AnalyzerFlagsLegacySerializableCacheCloning),
         ("Runtime can block inline SQL substitution", RuntimeCanBlockInlineSqlSubstitution),
@@ -74,6 +75,50 @@ internal static class Program
         Assert(
             result.Statements.Any(x => x.InlineSubstitutions.Contains("OrderBy")),
             "Expected statement inventory to include the raw inline substitution.");
+    }
+
+    private static void AnalyzerReadsDirectSqlMapXml()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "xdev-ibatis-direct-map-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(root);
+
+        try
+        {
+            var mapPath = Path.Combine(root, "Direct.xml");
+            File.WriteAllText(
+                mapPath,
+                """
+                <?xml version="1.0" encoding="utf-8" ?>
+                <sqlMap namespace="Direct" xmlns="http://ibatis.apache.org/mapping">
+                  <statements>
+                    <select id="FindDirect">
+                      select Id, Code from Patient where Id = #Id#
+                    </select>
+                    <select id="UnsafeDirect">
+                      select Id, Code from Patient order by $OrderBy$
+                    </select>
+                  </statements>
+                </sqlMap>
+                """);
+
+            var result = new SqlMapAnalyzer().Analyze(mapPath, root);
+
+            Assert(result.SqlMapFiles.Count == 1, "Expected the direct SQL map file to be listed.");
+            Assert(result.SqlMapFiles[0].Status == "Loaded", "Expected the direct SQL map file to load.");
+            Assert(result.SqlMapFiles[0].StatementCount == 2, "Expected both direct SQL map statements to be counted.");
+            Assert(result.Statements.Any(x => x.Id == "FindDirect" && x.Parameters.Contains("Id")), "Expected direct map parameter inventory.");
+            Assert(result.Statements.Any(x => x.Id == "UnsafeDirect" && x.InlineSubstitutions.Contains("OrderBy")), "Expected direct map inline substitution inventory.");
+        }
+        finally
+        {
+            try
+            {
+                Directory.Delete(root, recursive: true);
+            }
+            catch
+            {
+            }
+        }
     }
 
     private static void SensitiveStringsAreRedacted()

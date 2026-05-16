@@ -32,7 +32,8 @@ the configured provider metadata, and blocks mutating statements such as
 dotnet run --project tools\XDev.IBatisNet.XmlDebugger\XDev.IBatisNet.XmlDebugger.csproj -c Release
 ```
 
-Choose the application's `SqlMap.config`, optionally choose a working root, then
+Choose the application's `SqlMap.config`, or choose one SQL map XML file
+directly for a single-file inspection. Optionally choose a working root, then
 press `Analyze`.
 
 ## SQL Preview And Explain Plan

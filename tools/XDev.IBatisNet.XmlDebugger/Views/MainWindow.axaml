@@ -43,7 +43,7 @@
     <DockPanel Margin="12">
         <Border DockPanel.Dock="Top" Classes="panel" Margin="0,0,0,10">
             <Grid RowDefinitions="Auto,Auto,Auto" ColumnDefinitions="100,*,Auto,Auto" RowSpacing="8" ColumnSpacing="8">
-                <TextBlock Grid.Row="0" Grid.Column="0" Text="SqlMap.config" VerticalAlignment="Center" Classes="caption" />
+                <TextBlock Grid.Row="0" Grid.Column="0" Text="Config/map file" VerticalAlignment="Center" Classes="caption" />
                 <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding ConfigPath}" />
                 <Button Grid.Row="0" Grid.Column="2" Content="Browse" Click="BrowseConfigButton_OnClick" />
                 <Button Grid.Row="0" Grid.Column="3" Content="Analyze" Click="AnalyzeButton_OnClick" />
