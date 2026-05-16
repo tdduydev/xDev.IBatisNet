@@ -33,7 +33,7 @@ public sealed partial class SqlMapAnalyzer
         var aliases = new List<PropertyItem>();
         var sqlMapFiles = new List<SqlMapFileItem>();
         var statements = new List<StatementItem>();
-        var sqlFragments = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var sqlFragments = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
         configPath = NormalizePath(configPath);
         if (string.IsNullOrWhiteSpace(configPath))
@@ -106,7 +106,18 @@ public sealed partial class SqlMapAnalyzer
             aliases.Add(new PropertyItem(Attr(alias, "alias") ?? "(unnamed)", Attr(alias, "type") ?? ""));
         }
 
-        var providerName = ResolveValue(Attr(config.Descendants(ns + "provider").FirstOrDefault(), "name") ?? "", properties, diagnostics, configPath);
+        var providerDefinitions = LoadProviderDefinitions(config, ns, configDir, properties, diagnostics);
+        var database = config.Descendants(ns + "database").FirstOrDefault();
+        var databaseProvider = database?.Elements().FirstOrDefault(x => x.Name.LocalName.Equals("provider", StringComparison.OrdinalIgnoreCase));
+        var providerName = ResolveValue(Attr(databaseProvider, "name") ?? "", properties, diagnostics, configPath);
+        var provider = providerDefinitions.TryGetValue(providerName, out var resolvedProvider)
+            ? resolvedProvider
+            : ProviderInfo.Empty(providerName);
+        if (!string.IsNullOrWhiteSpace(providerName) && string.IsNullOrWhiteSpace(provider.ConnectionClass))
+        {
+            diagnostics.Add(new DiagnosticItem("Warning", $"Provider '{providerName}' was not resolved from providers.config. SQL preview can still run, but explain-plan execution needs a provider connection class.", configPath));
+        }
+
         var dataSource = config.Descendants(ns + "dataSource").FirstOrDefault();
         var dataSourceName = ResolveValue(Attr(dataSource, "name") ?? "", properties, diagnostics, configPath);
         var connectionString = ResolveValue(Attr(dataSource, "connectionString") ?? "", properties, diagnostics, configPath);
@@ -130,7 +141,7 @@ public sealed partial class SqlMapAnalyzer
         {
             foreach (var include in statement.Includes)
             {
-                if (!sqlFragments.Contains(include) && !statementIds.Contains(include))
+                if (!sqlFragments.ContainsKey(include) && !statementIds.Contains(include))
                 {
                     diagnostics.Add(new DiagnosticItem("Warning", $"Include refid '{include}' was not found in loaded SQL fragments/statements.", statement.FilePath, statement.Id));
                 }
@@ -148,7 +159,9 @@ public sealed partial class SqlMapAnalyzer
             WorkingRoot = root,
             ProviderName = providerName,
             DataSourceName = dataSourceName,
+            ConnectionString = connectionString,
             ConnectionStringPreview = MaskConnectionString(connectionString),
+            Provider = provider,
             Properties = properties.OrderBy(x => x.Key).Select(x => new PropertyItem(x.Key, x.Value)).ToList(),
             Settings = settings.OrderBy(x => x.Key).ToList(),
             Aliases = aliases.OrderBy(x => x.Key).ToList(),
@@ -227,6 +240,79 @@ public sealed partial class SqlMapAnalyzer
         }
     }
 
+    private static IReadOnlyDictionary<string, ProviderInfo> LoadProviderDefinitions(
+        XDocument config,
+        XNamespace ns,
+        string configDir,
+        IDictionary<string, string> properties,
+        ICollection<DiagnosticItem> diagnostics)
+    {
+        var providers = new Dictionary<string, ProviderInfo>(StringComparer.OrdinalIgnoreCase);
+        foreach (var providersElement in config.Descendants(ns + "providers"))
+        {
+            LoadProviderResource(Attr(providersElement, "resource"), configDir, properties, providers, diagnostics);
+            foreach (var providerElement in providersElement.Elements().Where(x => x.Name.LocalName.Equals("provider", StringComparison.OrdinalIgnoreCase)))
+            {
+                AddProviderDefinition(providerElement, providers);
+            }
+        }
+
+        return providers;
+    }
+
+    private static void LoadProviderResource(
+        string? resource,
+        string configDir,
+        IDictionary<string, string> properties,
+        IDictionary<string, ProviderInfo> providers,
+        ICollection<DiagnosticItem> diagnostics)
+    {
+        if (string.IsNullOrWhiteSpace(resource))
+        {
+            return;
+        }
+
+        var resolved = ResolveConfigRelativePath(resource, configDir, properties, diagnostics, null);
+        if (!File.Exists(resolved))
+        {
+            diagnostics.Add(new DiagnosticItem("Warning", "Providers resource was not found.", resolved));
+            return;
+        }
+
+        try
+        {
+            var doc = LoadSafeXDocument(resolved, LoadOptions.SetLineInfo);
+            foreach (var providerElement in doc.Descendants().Where(x => x.Name.LocalName.Equals("provider", StringComparison.OrdinalIgnoreCase)))
+            {
+                AddProviderDefinition(providerElement, providers);
+            }
+        }
+        catch (Exception ex)
+        {
+            diagnostics.Add(new DiagnosticItem("Error", $"Providers resource is not valid XML: {ex.Message}", resolved));
+        }
+    }
+
+    private static void AddProviderDefinition(XElement providerElement, IDictionary<string, ProviderInfo> providers)
+    {
+        var name = Attr(providerElement, "name") ?? "";
+        var connectionClass = Attr(providerElement, "connectionClass") ?? "";
+        if (string.IsNullOrWhiteSpace(name) || string.IsNullOrWhiteSpace(connectionClass))
+        {
+            return;
+        }
+
+        providers[name] = new ProviderInfo(
+            name,
+            Attr(providerElement, "assemblyName") ?? "",
+            connectionClass.Trim(),
+            Attr(providerElement, "commandClass") ?? "",
+            Attr(providerElement, "parameterPrefix") ?? "@",
+            IsTrue(Attr(providerElement, "usePositionalParameters")),
+            !IsFalse(Attr(providerElement, "useParameterPrefixInSql")),
+            !IsFalse(Attr(providerElement, "useParameterPrefixInParameter")));
+    }
+
     private static void AnalyzeSqlMapElement(
         XElement sqlMap,
         string configDir,
@@ -235,7 +321,7 @@ public sealed partial class SqlMapAnalyzer
         bool useStatementNamespaces,
         ICollection<SqlMapFileItem> sqlMapFiles,
         ICollection<StatementItem> statements,
-        ISet<string> sqlFragments,
+        IDictionary<string, string> sqlFragments,
         ICollection<DiagnosticItem> diagnostics)
     {
         var embedded = Attr(sqlMap, "embedded");
@@ -267,12 +353,14 @@ public sealed partial class SqlMapAnalyzer
             var mapNamespace = Attr(doc.Root, "namespace");
             var fileStatements = new List<StatementItem>();
 
+            var localSqlFragments = new Dictionary<string, XElement>(StringComparer.OrdinalIgnoreCase);
             foreach (var sql in doc.Descendants().Where(x => x.Name.LocalName.Equals("sql", StringComparison.OrdinalIgnoreCase)))
             {
                 var id = QualifyId(Attr(sql, "id") ?? "", mapNamespace, useStatementNamespaces);
                 if (!string.IsNullOrWhiteSpace(id))
                 {
-                    sqlFragments.Add(id);
+                    localSqlFragments[id] = sql;
+                    sqlFragments[id] = InnerXml(sql).Trim();
                 }
             }
 
@@ -304,7 +392,7 @@ public sealed partial class SqlMapAnalyzer
                 var id = QualifyId(Attr(element, "id") ?? "", mapNamespace, useStatementNamespaces);
                 var resultMap = ResolveRef(Attr(element, "resultMap"), mapNamespace, useStatementNamespaces);
                 var parameterMap = ResolveRef(Attr(element, "parameterMap"), mapNamespace, useStatementNamespaces);
-                var template = InnerXml(element).Trim();
+                var template = InnerXmlWithExpandedIncludes(element, localSqlFragments, mapNamespace, useStatementNamespaces, diagnostics, resolved).Trim();
                 var inlineSubstitutions = ExtractInlineSubstitutions(template);
                 var includes = element.Descendants()
                     .Where(x => x.Name.LocalName.Equals("include", StringComparison.OrdinalIgnoreCase))
@@ -463,7 +551,7 @@ public sealed partial class SqlMapAnalyzer
     {
         return ParameterRegex().Matches(sqlTemplate)
             .Where(x => x.Groups[1].Value == "#")
-            .Select(x => x.Groups[2].Value.Split(',')[0].Trim())
+            .Select(x => ExtractTokenName(x.Groups[2].Value))
             .Where(x => !string.IsNullOrWhiteSpace(x))
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .OrderBy(x => x)
@@ -474,11 +562,23 @@ public sealed partial class SqlMapAnalyzer
     {
         return ParameterRegex().Matches(sqlTemplate)
             .Where(x => x.Groups[1].Value == "$")
-            .Select(x => x.Groups[2].Value.Split(',')[0].Trim())
+            .Select(x => ExtractTokenName(x.Groups[2].Value))
             .Where(x => !string.IsNullOrWhiteSpace(x))
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .OrderBy(x => x)
             .ToList();
+    }
+
+    private static string ExtractTokenName(string token)
+    {
+        var name = token.Split(',', 2)[0].Trim();
+        name = name.Split(':', 2)[0].Trim();
+        if (name.EndsWith("[]", StringComparison.Ordinal))
+        {
+            name = name[..^2];
+        }
+
+        return string.IsNullOrWhiteSpace(name) || name == "[]" ? "value" : name;
     }
 
     private static XDocument LoadSafeXDocument(string path, LoadOptions options)
@@ -502,6 +602,63 @@ public sealed partial class SqlMapAnalyzer
         }
 
         return builder.ToString();
+    }
+
+    private static string InnerXmlWithExpandedIncludes(
+        XElement element,
+        IReadOnlyDictionary<string, XElement> sqlFragments,
+        string? mapNamespace,
+        bool useStatementNamespaces,
+        ICollection<DiagnosticItem> diagnostics,
+        string filePath)
+    {
+        var builder = new StringBuilder();
+        AppendExpandedNodes(
+            builder,
+            element.Nodes(),
+            sqlFragments,
+            mapNamespace,
+            useStatementNamespaces,
+            diagnostics,
+            filePath,
+            new HashSet<string>(StringComparer.OrdinalIgnoreCase));
+        return builder.ToString();
+    }
+
+    private static void AppendExpandedNodes(
+        StringBuilder builder,
+        IEnumerable<XNode> nodes,
+        IReadOnlyDictionary<string, XElement> sqlFragments,
+        string? mapNamespace,
+        bool useStatementNamespaces,
+        ICollection<DiagnosticItem> diagnostics,
+        string filePath,
+        ISet<string> includeStack)
+    {
+        foreach (var node in nodes)
+        {
+            if (node is XElement element && element.Name.LocalName.Equals("include", StringComparison.OrdinalIgnoreCase))
+            {
+                var refId = ResolveRef(Attr(element, "refid") ?? Attr(element, "refId") ?? "", mapNamespace, useStatementNamespaces);
+                if (string.IsNullOrWhiteSpace(refId) || !sqlFragments.TryGetValue(refId, out var fragment))
+                {
+                    builder.AppendLine(node.ToString(SaveOptions.DisableFormatting));
+                    continue;
+                }
+
+                if (!includeStack.Add(refId))
+                {
+                    diagnostics.Add(new DiagnosticItem("Warning", $"Include refid '{refId}' is recursive and was not expanded.", filePath));
+                    continue;
+                }
+
+                AppendExpandedNodes(builder, fragment.Nodes(), sqlFragments, mapNamespace, useStatementNamespaces, diagnostics, filePath, includeStack);
+                includeStack.Remove(refId);
+                continue;
+            }
+
+            builder.AppendLine(node.ToString(SaveOptions.DisableFormatting));
+        }
     }
 
     private static string? Attr(XElement? element, string name)

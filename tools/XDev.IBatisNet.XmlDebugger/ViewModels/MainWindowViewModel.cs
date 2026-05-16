@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Collections.ObjectModel;
+using System.Text;
+using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using XDev.IBatisNet.XmlDebugger.Models;
 using XDev.IBatisNet.XmlDebugger.Services;
@@ -11,6 +13,11 @@ namespace XDev.IBatisNet.XmlDebugger.ViewModels;
 public sealed partial class MainWindowViewModel : ViewModelBase
 {
     private readonly SqlMapAnalyzer _analyzer = new();
+    private readonly SqlPreviewService _previewService = new();
+    private readonly SqlPlanRunner _planRunner = new();
+    private ProviderInfo _provider = ProviderInfo.Empty();
+    private string _resolvedConnectionString = "";
+    private SqlPreviewResult _previewResult = new("", [], []);
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(FilteredStatements))]
@@ -32,10 +39,28 @@ public sealed partial class MainWindowViewModel : ViewModelBase
     private string _connectionStringPreview = "";
 
     [ObservableProperty]
+    private string _providerDetails = "";
+
+    [ObservableProperty]
     private string _statusText = "Ready";
 
     [ObservableProperty]
     private StatementItem? _selectedStatement;
+
+    [ObservableProperty]
+    private string _parameterInput = "";
+
+    [ObservableProperty]
+    private string _preparedSql = "";
+
+    [ObservableProperty]
+    private string _sqlPreviewStatus = "Choose a statement to preview SQL.";
+
+    [ObservableProperty]
+    private string _planConnectionString = "";
+
+    [ObservableProperty]
+    private string _planResultText = "Run an explain plan to check whether the database reports scans, missing indexes, or other obvious query-plan issues.";
 
     public ObservableCollection<PropertyItem> Properties { get; } = [];
     public ObservableCollection<PropertyItem> Settings { get; } = [];
@@ -69,8 +94,11 @@ public sealed partial class MainWindowViewModel : ViewModelBase
         ProviderName = result.ProviderName;
         DataSourceName = result.DataSourceName;
         ConnectionStringPreview = result.ConnectionStringPreview;
+        ProviderDetails = result.Provider.DisplayText;
         ConfigPath = result.ConfigPath;
         WorkingRoot = result.WorkingRoot;
+        _provider = result.Provider;
+        _resolvedConnectionString = result.ConnectionString;
 
         Replace(Properties, result.Properties);
         Replace(Settings, result.Settings);
@@ -89,8 +117,17 @@ public sealed partial class MainWindowViewModel : ViewModelBase
         ProviderName = "";
         DataSourceName = "";
         ConnectionStringPreview = "";
+        ProviderDetails = "";
         StatusText = "Ready";
         SelectedStatement = null;
+        ParameterInput = "";
+        PreparedSql = "";
+        SqlPreviewStatus = "Choose a statement to preview SQL.";
+        PlanConnectionString = "";
+        PlanResultText = "Run an explain plan to check whether the database reports scans, missing indexes, or other obvious query-plan issues.";
+        _provider = ProviderInfo.Empty();
+        _resolvedConnectionString = "";
+        _previewResult = new SqlPreviewResult("", [], []);
         Properties.Clear();
         Settings.Clear();
         Aliases.Clear();
@@ -103,6 +140,83 @@ public sealed partial class MainWindowViewModel : ViewModelBase
     partial void OnSearchTextChanged(string value)
     {
         OnPropertyChanged(nameof(FilteredStatements));
+    }
+
+    partial void OnSelectedStatementChanged(StatementItem? value)
+    {
+        ParameterInput = SqlPreviewService.BuildDefaultParameterInput(value);
+        RefreshSqlPreview();
+    }
+
+    partial void OnParameterInputChanged(string value)
+    {
+        RefreshSqlPreview();
+    }
+
+    public void RefreshSqlPreview()
+    {
+        _previewResult = _previewService.Render(SelectedStatement, ParameterInput, _provider);
+        PreparedSql = _previewResult.Sql;
+        SqlPreviewStatus = $"{_previewResult.MessageSummary} Parameters: {_previewResult.ParameterSummary}";
+    }
+
+    public string BuildSelectedSqlExport()
+    {
+        if (SelectedStatement is null)
+        {
+            return "";
+        }
+
+        RefreshSqlPreview();
+        return $"""
+        # {SelectedStatement.DisplayName}
+
+        Source: {SelectedStatement.FilePath}
+        Kind: {SelectedStatement.Kind}
+        Parameters: {_previewResult.ParameterSummary}
+
+        ```sql
+        {PreparedSql}
+        ```
+        """;
+    }
+
+    public string BuildAllSqlExport()
+    {
+        var builder = new StringBuilder();
+        builder.AppendLine("# xDev.IBatisNet SQL preview export");
+        builder.AppendLine();
+        builder.AppendLine($"Config: {ConfigPath}");
+        builder.AppendLine($"Provider: {ProviderDetails}");
+        builder.AppendLine();
+
+        foreach (var statement in Statements)
+        {
+            var preview = _previewService.Render(statement, SqlPreviewService.BuildDefaultParameterInput(statement), _provider);
+            builder.AppendLine($"## {statement.DisplayName}");
+            builder.AppendLine();
+            builder.AppendLine($"Source: {statement.FilePath}");
+            builder.AppendLine($"Kind: {statement.Kind}");
+            builder.AppendLine($"Parameters: {preview.ParameterSummary}");
+            builder.AppendLine();
+            builder.AppendLine("```sql");
+            builder.AppendLine(preview.Sql);
+            builder.AppendLine("```");
+            builder.AppendLine();
+        }
+
+        return builder.ToString().TrimEnd();
+    }
+
+    public async Task RunExplainPlanAsync()
+    {
+        RefreshSqlPreview();
+        var connectionString = string.IsNullOrWhiteSpace(PlanConnectionString)
+            ? _resolvedConnectionString
+            : PlanConnectionString;
+
+        PlanResultText = "Running explain plan...";
+        PlanResultText = await _planRunner.ExplainAsync(_provider, connectionString, PreparedSql, _previewResult.Parameters);
     }
 
     private static void Replace<T>(ObservableCollection<T> target, IEnumerable<T> source)

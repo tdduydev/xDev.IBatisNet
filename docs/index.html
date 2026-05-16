@@ -146,7 +146,7 @@
           <h2>Releases</h2>
           <p class="lead">
             Bản phát hành package được điều khiển bằng GitHub Actions để version, NuGet package,
-            release note artifact và GitHub Release dùng chung một nguồn dữ liệu.
+            XML Debugger portable build, release note artifact và GitHub Release dùng chung một nguồn dữ liệu.
           </p>
 
           <div class="grid two">
@@ -183,6 +183,7 @@ git push origin test-v1.6.2-xdev.10</code></pre>
             <li>Workflow sinh release notes từ git history kể từ tag package gần nhất.</li>
             <li>Nội dung đó được ghi vào <code>&lt;releaseNotes&gt;</code> trong nuspec trước khi pack.</li>
             <li>Cùng file release notes được upload làm artifact và dùng làm body của GitHub Release.</li>
+            <li>File portable Windows x64 của XML Debugger được attach cùng package release.</li>
           </ul>
 
           <div class="notice">
@@ -514,8 +515,8 @@ catch
           <h2>XML Debugger</h2>
           <p class="lead">
             Repo có tool desktop Avalonia <code>XDev.IBatisNet.XmlDebugger</code> để đọc
-            <code>SqlMap.config</code> và các SQL map XML. Tool này không execute SQL và không mở
-            database connection, nên phù hợp để kiểm tra map trước khi deploy.
+            <code>SqlMap.config</code> và các SQL map XML. Mặc định tool chỉ phân tích XML; phần
+            explain plan là thao tác opt-in và chỉ chạy cho câu đọc dữ liệu.
           </p>
 
           <figure class="figure">
@@ -535,7 +536,23 @@ catch
             <li>Thiếu <code>resultMap</code>, <code>parameterMap</code> hoặc <code>&lt;include refid="..."&gt;</code> nội bộ.</li>
             <li>Danh sách statement <code>select</code>, <code>insert</code>, <code>update</code>, <code>delete</code>, <code>statement</code>, <code>procedure</code>.</li>
             <li>Tham số lấy từ token <code>#...#</code> và <code>$...$</code>.</li>
+            <li>Preview SQL đã resolve <code>&lt;include&gt;</code>, dynamic tag phổ biến và parameter placeholder theo provider.</li>
+            <li>Export SQL preview cho statement đang chọn hoặc toàn bộ map đã load.</li>
+            <li>Chạy explain plan cho câu <code>select</code>/<code>with</code> để xem scan, missing index hoặc dấu hiệu tối ưu hóa rõ ràng.</li>
           </ul>
+
+          <h3>Preview và explain plan</h3>
+          <p>
+            Tab <strong>SQL Preview</strong> cho phép nhập tham số mẫu theo dạng <code>Name=value</code>.
+            Tool dùng các giá trị này để bật/tắt dynamic SQL phổ biến như <code>isNotEmpty</code>,
+            <code>isEqual</code>, <code>isGreaterThan</code>, rồi chuyển <code>#...#</code> thành parameter
+            đúng prefix của provider trong <code>providers.config</code>.
+          </p>
+          <p>
+            Tab <strong>Explain Plan</strong> chỉ chạy kế hoạch thực thi cho câu đọc dữ liệu, không chạy
+            trực tiếp các câu <code>insert</code>, <code>update</code>, <code>delete</code>. SQL Server,
+            PostgreSQL, MySQL và SQLite-style provider được hỗ trợ khi assembly provider có sẵn trong process.
+          </p>
 
           <h3>Publish bản portable Windows</h3>
           <pre><code>dotnet publish tools\XDev.IBatisNet.XmlDebugger\XDev.IBatisNet.XmlDebugger.csproj `

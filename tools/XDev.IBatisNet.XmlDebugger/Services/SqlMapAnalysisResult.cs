@@ -11,7 +11,9 @@ public sealed class SqlMapAnalysisResult
     public string WorkingRoot { get; init; } = "";
     public string ProviderName { get; init; } = "";
     public string DataSourceName { get; init; } = "";
+    public string ConnectionString { get; init; } = "";
     public string ConnectionStringPreview { get; init; } = "";
+    public ProviderInfo Provider { get; init; } = ProviderInfo.Empty();
     public TimeSpan Elapsed { get; init; }
     public IReadOnlyList<PropertyItem> Properties { get; init; } = [];
     public IReadOnlyList<PropertyItem> Settings { get; init; } = [];

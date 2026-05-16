@@ -97,6 +97,34 @@ jobs:
       - name: Build legacy .NET Framework compatibility solution
         run: dotnet msbuild DataMapper.2010.sln /p:Configuration=Release /p:TargetFrameworkVersion=v4.0 /p:FrameworkPathOverride="${{ steps.netfx40.outputs.path }}" /v:minimal
 
+      - name: Publish XML Debugger portable build
+        shell: pwsh
+        run: |
+          $debuggerVersion = "0.0.${{ github.run_number }}-ci"
+          if ("${{ github.ref }}" -like "refs/tags/test-v*") {
+            $debuggerVersion = "${{ github.ref_name }}".Substring("test-v".Length)
+          } elseif ("${{ github.ref }}" -like "refs/tags/v*") {
+            $debuggerVersion = "${{ github.ref_name }}".Substring("v".Length)
+          }
+
+          $debuggerVersion = $debuggerVersion -replace '[^0-9A-Za-z._-]', '-'
+          $publishDir = Join-Path $PWD "artifacts\xml-debugger\win-x64"
+          dotnet publish tools\XDev.IBatisNet.XmlDebugger\XDev.IBatisNet.XmlDebugger.csproj `
+            -c Release `
+            -r win-x64 `
+            --self-contained true `
+            /p:PublishSingleFile=true `
+            /p:IncludeNativeLibrariesForSelfExtract=true `
+            /p:DebugType=embedded `
+            /p:Version="$debuggerVersion" `
+            -o "$publishDir"
+
+          Get-ChildItem $publishDir -Filter *.pdb -Recurse | Remove-Item -Force
+          Compress-Archive `
+            -Path "$publishDir\*" `
+            -DestinationPath "artifacts\xDev.IBatisNet.XmlDebugger-$debuggerVersion-win-x64-portable.zip" `
+            -Force
+
       - name: Upload build outputs
         uses: actions/upload-artifact@v7
         with:
@@ -105,6 +133,7 @@ jobs:
             IBatisNet.Common/bin/Release/**
             IBatisNet.DataMapper/bin/Release/**
             IBatisNet.Common.Logging.Log4Net/bin/Release/**
+            artifacts/*.zip
 
       - name: Setup NuGet
         if: github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/v') || startsWith(github.ref, 'refs/tags/test-v') || (github.event_name == 'workflow_dispatch' && github.event.inputs.publishFeed != 'none')
@@ -286,6 +315,7 @@ jobs:
           path: |
             artifacts/*.nupkg
             artifacts/*release-notes.md
+            artifacts/*.zip
 
       - name: Add GitHub Packages source
         if: steps.publish.outputs.publishGitHubPackages == 'true'
@@ -343,7 +373,7 @@ jobs:
           $title = "xDev.IBatisNet $version"
           $notesPath = "${{ steps.notes.outputs.path }}"
           $assets = Get-ChildItem artifacts -File |
-            Where-Object { $_.Name -like "*.nupkg" -or $_.Name -like "*release-notes.md" } |
+            Where-Object { $_.Name -like "*.nupkg" -or $_.Name -like "*release-notes.md" -or $_.Name -like "*.zip" } |
             Sort-Object Name |
             ForEach-Object { $_.FullName }
           $isPrerelease = "${{ steps.publish.outputs.isPrerelease }}" -eq "true"

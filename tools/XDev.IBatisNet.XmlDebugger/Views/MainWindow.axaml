@@ -56,7 +56,7 @@
                 <Grid Grid.Row="2" Grid.ColumnSpan="4" ColumnDefinitions="*,*,*" ColumnSpacing="8">
                     <StackPanel Grid.Column="0">
                         <TextBlock Text="Provider" Classes="caption" />
-                        <TextBlock Text="{Binding ProviderName}" TextTrimming="CharacterEllipsis" />
+                        <TextBlock Text="{Binding ProviderDetails}" TextTrimming="CharacterEllipsis" />
                     </StackPanel>
                     <StackPanel Grid.Column="1">
                         <TextBlock Text="Data source" Classes="caption" />
@@ -195,14 +195,80 @@
                         <TextBlock Grid.Row="6" Grid.Column="1" Text="{Binding SelectedStatement.IncludeText}" TextWrapping="Wrap" />
                     </Grid>
 
-                    <TextBox Grid.Row="2"
-                             Classes="mono"
-                             Text="{Binding SelectedStatement.SqlTemplate}"
-                             AcceptsReturn="True"
-                             IsReadOnly="True"
-                             TextWrapping="NoWrap"
-                             ScrollViewer.HorizontalScrollBarVisibility="Auto"
-                             ScrollViewer.VerticalScrollBarVisibility="Auto" />
+                    <TabControl Grid.Row="2">
+                        <TabItem Header="Template">
+                            <TextBox Classes="mono"
+                                     Text="{Binding SelectedStatement.SqlTemplate}"
+                                     AcceptsReturn="True"
+                                     IsReadOnly="True"
+                                     TextWrapping="NoWrap"
+                                     ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                                     ScrollViewer.VerticalScrollBarVisibility="Auto" />
+                        </TabItem>
+
+                        <TabItem Header="SQL Preview">
+                            <Grid RowDefinitions="Auto,*,Auto" RowSpacing="8">
+                                <Grid ColumnDefinitions="220,*" ColumnSpacing="8">
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="Sample parameters" Classes="caption" />
+                                        <TextBox Classes="mono"
+                                                 Text="{Binding ParameterInput}"
+                                                 AcceptsReturn="True"
+                                                 MinHeight="120"
+                                                 TextWrapping="NoWrap"
+                                                 ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                                                 ScrollViewer.VerticalScrollBarVisibility="Auto" />
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="1">
+                                        <TextBlock Text="Executable SQL" Classes="caption" />
+                                        <TextBox Classes="mono"
+                                                 Text="{Binding PreparedSql}"
+                                                 AcceptsReturn="True"
+                                                 IsReadOnly="True"
+                                                 MinHeight="120"
+                                                 TextWrapping="NoWrap"
+                                                 ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                                                 ScrollViewer.VerticalScrollBarVisibility="Auto" />
+                                    </StackPanel>
+                                </Grid>
+
+                                <TextBlock Grid.Row="1"
+                                           Text="{Binding SqlPreviewStatus}"
+                                           Classes="caption"
+                                           TextWrapping="Wrap" />
+
+                                <StackPanel Grid.Row="2" Orientation="Horizontal" Spacing="8">
+                                    <Button Content="Refresh preview" Click="RefreshSqlPreviewButton_OnClick" />
+                                    <Button Content="Export selected SQL" Click="ExportSelectedSqlButton_OnClick" />
+                                    <Button Content="Export all SQL" Click="ExportAllSqlButton_OnClick" />
+                                </StackPanel>
+                            </Grid>
+                        </TabItem>
+
+                        <TabItem Header="Explain Plan">
+                            <Grid RowDefinitions="Auto,Auto,*" RowSpacing="8">
+                                <StackPanel>
+                                    <TextBlock Text="Connection override" Classes="caption" />
+                                    <TextBox Text="{Binding PlanConnectionString}"
+                                             PlaceholderText="Leave blank to use the SqlMap.config dataSource connection string" />
+                                </StackPanel>
+
+                                <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="8">
+                                    <Button Content="Run explain plan" Click="RunExplainPlanButton_OnClick" />
+                                    <TextBlock Text="Only SELECT/WITH statements are planned; mutating SQL is blocked." Classes="caption" VerticalAlignment="Center" />
+                                </StackPanel>
+
+                                <TextBox Grid.Row="2"
+                                         Classes="mono"
+                                         Text="{Binding PlanResultText}"
+                                         AcceptsReturn="True"
+                                         IsReadOnly="True"
+                                         TextWrapping="NoWrap"
+                                         ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                                         ScrollViewer.VerticalScrollBarVisibility="Auto" />
+                            </Grid>
+                        </TabItem>
+                    </TabControl>
                 </Grid>
             </Border>
         </Grid>

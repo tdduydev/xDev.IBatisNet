@@ -85,10 +85,13 @@ GitHub Actions:
 
 - `CI` builds the .NET 10 solution and the legacy .NET Framework compatibility
   solution.
+- `CI` publishes a Windows x64 portable build of the XML Debugger and uploads it
+  with the build artifacts.
 - `CI` automatically packs and publishes to GitHub Packages on pushes to
   `master` using an auto-generated prerelease version.
 - `CI` packs and publishes to NuGet.org and GitHub Packages when a `v*` tag is
-  pushed, then creates or updates the matching GitHub Release.
+  pushed, then creates or updates the matching GitHub Release with the NuGet
+  package, release notes, and XML Debugger portable build.
 - `CI` packs and publishes to the NuGet test gallery when a `test-v*` tag is
   pushed. The same package is also published to GitHub Packages and the GitHub
   Release is marked as a prerelease.

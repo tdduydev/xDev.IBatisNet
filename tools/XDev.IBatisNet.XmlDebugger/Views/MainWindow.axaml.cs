@@ -2,6 +2,7 @@ using Avalonia.Controls;
 using Avalonia.Platform.Storage;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using XDev.IBatisNet.XmlDebugger.ViewModels;
 
 namespace XDev.IBatisNet.XmlDebugger.Views;
@@ -69,6 +70,64 @@ public partial class MainWindow : Window
         if (DataContext is MainWindowViewModel viewModel)
         {
             viewModel.Clear();
+        }
+    }
+
+    private void RefreshSqlPreviewButton_OnClick(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        if (DataContext is MainWindowViewModel viewModel)
+        {
+            viewModel.RefreshSqlPreview();
+        }
+    }
+
+    private async void ExportSelectedSqlButton_OnClick(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        if (DataContext is MainWindowViewModel viewModel)
+        {
+            await ExportSqlAsync("Export selected SQL", "selected-sql.md", viewModel.BuildSelectedSqlExport());
+        }
+    }
+
+    private async void ExportAllSqlButton_OnClick(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        if (DataContext is MainWindowViewModel viewModel)
+        {
+            await ExportSqlAsync("Export all SQL", "sql-preview-export.md", viewModel.BuildAllSqlExport());
+        }
+    }
+
+    private async void RunExplainPlanButton_OnClick(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        if (DataContext is MainWindowViewModel viewModel)
+        {
+            await viewModel.RunExplainPlanAsync();
+        }
+    }
+
+    private async Task ExportSqlAsync(string title, string suggestedFileName, string content)
+    {
+        if (string.IsNullOrWhiteSpace(content))
+        {
+            return;
+        }
+
+        var file = await StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
+        {
+            Title = title,
+            SuggestedFileName = suggestedFileName,
+            FileTypeChoices =
+            [
+                new FilePickerFileType("Markdown") { Patterns = ["*.md"] },
+                new FilePickerFileType("SQL") { Patterns = ["*.sql"] },
+                FilePickerFileTypes.All
+            ]
+        });
+
+        var path = file?.TryGetLocalPath();
+        if (!string.IsNullOrWhiteSpace(path))
+        {
+            await File.WriteAllTextAsync(path, content);
         }
     }
 }

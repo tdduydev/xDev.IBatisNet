@@ -410,14 +410,18 @@ jobs:
         run: |
           $tag = "${{ github.ref_name }}"
           $version = "${{ needs.version.outputs.version }}"
-          $title = if ($tag.StartsWith("xml-debugger-v")) { "xDev iBATIS XML Debugger $version" } else { "xDev.IBatisNet $version" }
+          $isDesktopTag = $tag.StartsWith("xml-debugger-v")
+          $title = if ($isDesktopTag) { "xDev iBATIS XML Debugger $version" } else { "xDev.IBatisNet $version" }
           $notesPath = "${{ steps.notes.outputs.path }}"
           $assets = Get-ChildItem artifacts/desktop -Recurse -File | ForEach-Object { $_.FullName }
           $isPrerelease = $tag.StartsWith("test-v") -or $version.Contains("-")
 
           gh release view $tag *> $null
           if ($LASTEXITCODE -eq 0) {
-            gh release edit $tag --title "$title" --notes-file "$notesPath"
+            if ($isDesktopTag) {
+              gh release edit $tag --title "$title" --notes-file "$notesPath"
+            }
+
             if ($assets) {
               gh release upload $tag @assets --clobber
             }
