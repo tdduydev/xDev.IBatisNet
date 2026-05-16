@@ -45,6 +45,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
 
       - name: Setup .NET 10
         uses: actions/setup-dotnet@v5
@@ -56,6 +58,25 @@ jobs:
 
       - name: Build .NET 10 solution
         run: dotnet build xDev.IBatisNet.slnx -c Release --no-restore
+
+      - name: Run integration performance smoke
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force artifacts | Out-Null
+          dotnet run --project examples\XDev.IBatisNet.IntegrationPerf\XDev.IBatisNet.IntegrationPerf.csproj `
+            -c Release `
+            --no-build `
+            -- `
+            --iterations 5 `
+            --warmup 1 `
+            --max-p95-ms 5000 `
+            --report artifacts\integration-perf.md
+
+      - name: Upload integration performance report
+        uses: actions/upload-artifact@v7
+        with:
+          name: xDev.IBatisNet-integration-perf
+          path: artifacts/integration-perf.md
 
       - name: Restore .NET Framework 4.0 reference assemblies
         id: netfx40
@@ -163,6 +184,45 @@ jobs:
           $nuspec = $nuspec -replace '<version>.*?</version>', "<version>$version</version>"
           Set-Content xDev.IBatisNet.nuspec -Value $nuspec -NoNewline
 
+      - name: Generate NuGet release notes
+        if: steps.publish.outputs.shouldPublish == 'true'
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force artifacts | Out-Null
+          $version = "${{ steps.publish.outputs.packageVersion }}"
+          $notesPath = "artifacts\xDev.IBatisNet-$version-release-notes.md"
+          $previousTag = $null
+          try {
+            $previousTag = git describe --tags --abbrev=0 "${{ github.sha }}^" 2>$null
+          } catch {
+            $previousTag = $null
+          }
+
+          $range = if ([string]::IsNullOrWhiteSpace($previousTag)) { "${{ github.sha }}" } else { "$previousTag..${{ github.sha }}" }
+          $changes = git log --pretty=format:"- %s (`%h`)" $range
+          if ([string]::IsNullOrWhiteSpace($changes)) {
+            $changes = "- No commit details available."
+          }
+
+          $feeds = @()
+          if ("${{ steps.publish.outputs.publishGitHubPackages }}" -eq "true") { $feeds += "GitHub Packages" }
+          if ("${{ steps.publish.outputs.publishNuGetTest }}" -eq "true") { $feeds += "NuGet test" }
+          if ("${{ steps.publish.outputs.publishNuGetOrg }}" -eq "true") { $feeds += "NuGet.org" }
+          if ($feeds.Count -eq 0) { $feeds += "artifact only" }
+
+          @"
+          # xDev.IBatisNet $version
+
+          - Ref: `${{ github.ref_name }}`
+          - Commit: `${{ github.sha }}`
+          - Run: `${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}`
+          - Publish target: `$($feeds -join ", ")`
+
+          ## Changes
+
+          $changes
+          "@ | Set-Content $notesPath -NoNewline
+
       - name: Pack NuGet package
         if: steps.publish.outputs.shouldPublish == 'true'
         run: nuget pack xDev.IBatisNet.nuspec -OutputDirectory artifacts -NoDefaultExcludes
@@ -172,7 +232,9 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: xDev.IBatisNet-${{ steps.publish.outputs.packageVersion }}
-          path: artifacts/*.nupkg
+          path: |
+            artifacts/*.nupkg
+            artifacts/*release-notes.md
 
       - name: Add GitHub Packages source
         if: steps.publish.outputs.publishGitHubPackages == 'true'

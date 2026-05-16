@@ -80,7 +80,7 @@ public sealed partial class MainWindowViewModel : ViewModelBase
         Replace(Diagnostics, result.Diagnostics);
 
         SelectedStatement = Statements.FirstOrDefault();
-        StatusText = $"{result.Statements.Count} statements, {result.SqlMapFiles.Count} maps, {result.ErrorCount} errors, {result.WarningCount} warnings";
+        StatusText = $"{result.Statements.Count} statements, {result.SqlMapFiles.Count} maps, {result.ErrorCount} errors, {result.WarningCount} warnings, analyzed in {result.ElapsedText}";
         OnPropertyChanged(nameof(FilteredStatements));
     }
 

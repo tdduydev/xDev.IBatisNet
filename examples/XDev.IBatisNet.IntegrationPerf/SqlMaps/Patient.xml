@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<sqlMap namespace="Patient" xmlns="http://ibatis.apache.org/mapping">
+  <resultMaps>
+    <resultMap id="PatientResult" class="SamplePatient">
+      <result property="Id" column="Id" dbType="Int32" />
+      <result property="Code" column="Code" dbType="String" />
+      <result property="FullName" column="FullName" dbType="String" />
+    </resultMap>
+  </resultMaps>
+
+  <statements>
+    <sql id="BaseColumns">
+      Id,
+      Code,
+      FullName
+    </sql>
+
+    <select id="Patient_GetById" parameterClass="int" resultMap="PatientResult">
+      select <include refid="BaseColumns" />
+      from Patients
+      where Id = #value#
+    </select>
+
+    <select id="Patient_Search" parameterClass="map" resultMap="PatientResult">
+      select <include refid="BaseColumns" />
+      from Patients
+      where (@Code is null or Code = #Code#)
+        and (@FullName is null or FullName like #FullName#)
+    </select>
+
+    <insert id="Patient_Insert" parameterClass="SamplePatient">
+      insert into Patients (Code, FullName)
+      values (#Code#, #FullName#)
+    </insert>
+
+    <update id="Patient_Update" parameterClass="SamplePatient">
+      update Patients
+      set Code = #Code#,
+          FullName = #FullName#
+      where Id = #Id#
+    </update>
+
+    <delete id="Patient_Delete" parameterClass="int">
+      delete from Patients
+      where Id = #value#
+    </delete>
+  </statements>
+</sqlMap>

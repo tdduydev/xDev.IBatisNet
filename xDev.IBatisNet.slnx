@@ -11,4 +11,7 @@
   <Folder Name="/tools/">
     <Project Path="tools/XDev.IBatisNet.XmlDebugger/XDev.IBatisNet.XmlDebugger.csproj" />
   </Folder>
+  <Folder Name="/examples/">
+    <Project Path="examples/XDev.IBatisNet.IntegrationPerf/XDev.IBatisNet.IntegrationPerf.csproj" />
+  </Folder>
 </Solution>

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -24,6 +25,7 @@ public sealed partial class SqlMapAnalyzer
 
     public SqlMapAnalysisResult Analyze(string configPath, string? workingRoot)
     {
+        var stopwatch = Stopwatch.StartNew();
         var diagnostics = new List<DiagnosticItem>();
         var properties = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         var settingValues = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
@@ -37,13 +39,13 @@ public sealed partial class SqlMapAnalyzer
         if (string.IsNullOrWhiteSpace(configPath))
         {
             diagnostics.Add(new DiagnosticItem("Error", "Choose a SqlMap.config file."));
-            return new SqlMapAnalysisResult { Diagnostics = diagnostics };
+            return new SqlMapAnalysisResult { Diagnostics = diagnostics, Elapsed = stopwatch.Elapsed };
         }
 
         if (!File.Exists(configPath))
         {
             diagnostics.Add(new DiagnosticItem("Error", "SqlMap.config was not found.", configPath));
-            return new SqlMapAnalysisResult { ConfigPath = configPath, Diagnostics = diagnostics };
+            return new SqlMapAnalysisResult { ConfigPath = configPath, Diagnostics = diagnostics, Elapsed = stopwatch.Elapsed };
         }
 
         var configDir = Path.GetDirectoryName(configPath) ?? Environment.CurrentDirectory;
@@ -66,7 +68,8 @@ public sealed partial class SqlMapAnalyzer
             {
                 ConfigPath = configPath,
                 WorkingRoot = root,
-                Diagnostics = diagnostics
+                Diagnostics = diagnostics,
+                Elapsed = stopwatch.Elapsed
             };
         }
 
@@ -116,11 +119,16 @@ public sealed partial class SqlMapAnalyzer
             diagnostics.Add(new DiagnosticItem("Warning", $"Duplicate statement id '{group.Key}' appears {group.Count()} times.", group.First().FilePath));
         }
 
+        var statementIds = statements
+            .Select(x => x.Id)
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
         foreach (var statement in statements)
         {
             foreach (var include in statement.Includes)
             {
-                if (!sqlFragments.Contains(include) && !statements.Any(x => string.Equals(x.Id, include, StringComparison.OrdinalIgnoreCase)))
+                if (!sqlFragments.Contains(include) && !statementIds.Contains(include))
                 {
                     diagnostics.Add(new DiagnosticItem("Warning", $"Include refid '{include}' was not found in loaded SQL fragments/statements.", statement.FilePath, statement.Id));
                 }
@@ -144,7 +152,8 @@ public sealed partial class SqlMapAnalyzer
             Aliases = aliases.OrderBy(x => x.Key).ToList(),
             SqlMapFiles = sqlMapFiles,
             Statements = statements.OrderBy(x => x.Id).ThenBy(x => x.Kind).ToList(),
-            Diagnostics = diagnostics
+            Diagnostics = diagnostics,
+            Elapsed = stopwatch.Elapsed
         };
     }
 

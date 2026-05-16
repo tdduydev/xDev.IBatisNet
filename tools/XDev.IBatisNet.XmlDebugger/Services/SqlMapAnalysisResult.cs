@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using XDev.IBatisNet.XmlDebugger.Models;
@@ -11,6 +12,7 @@ public sealed class SqlMapAnalysisResult
     public string ProviderName { get; init; } = "";
     public string DataSourceName { get; init; } = "";
     public string ConnectionStringPreview { get; init; } = "";
+    public TimeSpan Elapsed { get; init; }
     public IReadOnlyList<PropertyItem> Properties { get; init; } = [];
     public IReadOnlyList<PropertyItem> Settings { get; init; } = [];
     public IReadOnlyList<PropertyItem> Aliases { get; init; } = [];
@@ -21,4 +23,7 @@ public sealed class SqlMapAnalysisResult
     public int ErrorCount => Diagnostics.Count(x => x.Severity == "Error");
     public int WarningCount => Diagnostics.Count(x => x.Severity == "Warning");
     public int InfoCount => Diagnostics.Count(x => x.Severity == "Info");
+    public string ElapsedText => Elapsed.TotalMilliseconds < 1000
+        ? $"{Elapsed.TotalMilliseconds:N0} ms"
+        : $"{Elapsed.TotalSeconds:N2} s";
 }
