@@ -247,7 +247,7 @@ jobs:
             "releaseTag=$releaseTag" >> $env:GITHUB_OUTPUT
             "isPrerelease=$($isPrerelease.ToString().ToLowerInvariant())" >> $env:GITHUB_OUTPUT
           } elseif ("${{ github.ref }}" -eq "refs/heads/master" -and "${{ github.event_name }}" -eq "push") {
-            $releaseTag = "ci-v$version" -replace '[^0-9A-Za-z._-]', '-'
+            $releaseTag = "v$version" -replace '[^0-9A-Za-z._-]', '-'
             "releaseTag=$releaseTag" >> $env:GITHUB_OUTPUT
             "isPrerelease=true" >> $env:GITHUB_OUTPUT
           } else {

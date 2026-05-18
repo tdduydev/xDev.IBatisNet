@@ -123,7 +123,7 @@ git push origin test-v1.6.2-xdev.10
 ```
 
 Pushes to `master` also create GitHub prereleases automatically. The generated
-tag uses the auto package version, for example `ci-v1.6.2-xdev.37`, and points
+tag uses the auto package version, for example `v1.6.2-xdev.37`, and points
 at the pushed commit.
 
 ## Baseline Notes
