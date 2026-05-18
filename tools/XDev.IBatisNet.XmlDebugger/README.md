@@ -19,8 +19,12 @@ files without starting the host application.
 - SQL preview that expands local `<include>` fragments, evaluates common dynamic
   tags from sample parameters, and converts `#...#` tokens into provider
   parameters.
+- Parameter entry rows are generated from the selected XML statement, including
+  safe `#...#` DbParameters and raw `$...$` substitutions.
 - SQL export for the selected statement or the whole loaded map inventory.
 - Read-only explain-plan execution for supported SELECT/WITH statements.
+- Database configuration is resolved from `SqlMap.config` and `providers.config`
+  and can be overridden before running an explain plan.
 
 By default the debugger only reads XML. Explain-plan execution is opt-in, uses
 the configured provider metadata, and blocks mutating statements such as
@@ -39,14 +43,16 @@ press `Analyze`.
 ## SQL Preview And Explain Plan
 
 After analysis, choose a statement and open the `SQL Preview` tab. The sample
-parameter box accepts `Name=value` lines. Those values decide which common
-dynamic tags are included and become DbParameter values when the preview SQL is
-planned.
+parameter rows are generated from that statement's XML query. Enter values in
+the generated rows; those values decide which common dynamic tags are included
+and become DbParameter values when the preview SQL is planned.
 
 The `Explain Plan` tab uses the `dataSource` connection string from
-`SqlMap.config` unless a connection override is supplied. The debugger currently
-generates explain-plan SQL for SQL Server, PostgreSQL, MySQL, and SQLite-style
-providers when their connection assembly is available to the process.
+`SqlMap.config` and provider metadata from `providers.config`. You can edit the
+connection string and command timeout in the tab before running. The debugger
+currently generates explain-plan SQL for SQL Server, PostgreSQL, MySQL, and
+SQLite-style providers when their connection assembly is available to the
+process.
 
 ## Publish A Portable Windows Build
 

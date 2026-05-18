@@ -17,6 +17,7 @@ public sealed class SqlPlanRunner
         string connectionString,
         string sql,
         IReadOnlyList<SqlCommandParameter> parameters,
+        int commandTimeoutSeconds,
         CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(sql))
@@ -66,7 +67,7 @@ public sealed class SqlPlanRunner
                 await using var command = connection.CreateCommand();
                 command.CommandText = planSql;
                 command.CommandType = CommandType.Text;
-                command.CommandTimeout = 30;
+                command.CommandTimeout = Math.Clamp(commandTimeoutSeconds, 1, 600);
                 AddParameters(command, parameters);
 
                 await using var reader = await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);

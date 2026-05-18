@@ -105,6 +105,14 @@ public partial class MainWindow : Window
         }
     }
 
+    private void ResetDbConfigButton_OnClick(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        if (DataContext is MainWindowViewModel viewModel)
+        {
+            viewModel.ResetDbConfigFromSqlMap();
+        }
+    }
+
     private async Task ExportSqlAsync(string title, string suggestedFileName, string content)
     {
         if (string.IsNullOrWhiteSpace(content))

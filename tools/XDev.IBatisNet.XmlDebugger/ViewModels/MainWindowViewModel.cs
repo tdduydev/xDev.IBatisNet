@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Collections.ObjectModel;
 using System.Text;
@@ -18,6 +19,7 @@ public sealed partial class MainWindowViewModel : ViewModelBase
     private ProviderInfo _provider = ProviderInfo.Empty();
     private string _resolvedConnectionString = "";
     private SqlPreviewResult _previewResult = new("", [], []);
+    private bool _isUpdatingParameterRows;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(FilteredStatements))]
@@ -60,6 +62,18 @@ public sealed partial class MainWindowViewModel : ViewModelBase
     private string _planConnectionString = "";
 
     [ObservableProperty]
+    private string _dbConnectionString = "";
+
+    [ObservableProperty]
+    private string _dbProviderSummary = "";
+
+    [ObservableProperty]
+    private string _dbParameterSummary = "";
+
+    [ObservableProperty]
+    private int _commandTimeoutSeconds = 30;
+
+    [ObservableProperty]
     private string _planResultText = "Run an explain plan to check whether the database reports scans, missing indexes, or other obvious query-plan issues.";
 
     public ObservableCollection<PropertyItem> Properties { get; } = [];
@@ -68,6 +82,7 @@ public sealed partial class MainWindowViewModel : ViewModelBase
     public ObservableCollection<SqlMapFileItem> SqlMapFiles { get; } = [];
     public ObservableCollection<StatementItem> Statements { get; } = [];
     public ObservableCollection<DiagnosticItem> Diagnostics { get; } = [];
+    public ObservableCollection<SqlParameterInputItem> SqlParameters { get; } = [];
 
     public IEnumerable<StatementItem> FilteredStatements
     {
@@ -99,6 +114,9 @@ public sealed partial class MainWindowViewModel : ViewModelBase
         WorkingRoot = result.WorkingRoot;
         _provider = result.Provider;
         _resolvedConnectionString = result.ConnectionString;
+        DbConnectionString = result.ConnectionString;
+        DbProviderSummary = result.Provider.DisplayText;
+        DbParameterSummary = $"SQL prefix '{result.Provider.ParameterPrefix}', positional={result.Provider.UsePositionalParameters}, prefix-in-sql={result.Provider.UseParameterPrefixInSql}, prefix-in-parameter={result.Provider.UseParameterPrefixInParameter}";
 
         Replace(Properties, result.Properties);
         Replace(Settings, result.Settings);
@@ -124,10 +142,15 @@ public sealed partial class MainWindowViewModel : ViewModelBase
         PreparedSql = "";
         SqlPreviewStatus = "Choose a statement to preview SQL.";
         PlanConnectionString = "";
+        DbConnectionString = "";
+        DbProviderSummary = "";
+        DbParameterSummary = "";
+        CommandTimeoutSeconds = 30;
         PlanResultText = "Run an explain plan to check whether the database reports scans, missing indexes, or other obvious query-plan issues.";
         _provider = ProviderInfo.Empty();
         _resolvedConnectionString = "";
         _previewResult = new SqlPreviewResult("", [], []);
+        ClearParameterRows();
         Properties.Clear();
         Settings.Clear();
         Aliases.Clear();
@@ -144,7 +167,7 @@ public sealed partial class MainWindowViewModel : ViewModelBase
 
     partial void OnSelectedStatementChanged(StatementItem? value)
     {
-        ParameterInput = SqlPreviewService.BuildDefaultParameterInput(value);
+        RebuildParameterRows(value);
         RefreshSqlPreview();
     }
 
@@ -155,6 +178,7 @@ public sealed partial class MainWindowViewModel : ViewModelBase
 
     public void RefreshSqlPreview()
     {
+        ParameterInput = BuildParameterInputText();
         _previewResult = _previewService.Render(SelectedStatement, ParameterInput, _provider);
         PreparedSql = _previewResult.Sql;
         SqlPreviewStatus = $"{_previewResult.MessageSummary} Parameters: {_previewResult.ParameterSummary}";
@@ -211,12 +235,84 @@ public sealed partial class MainWindowViewModel : ViewModelBase
     public async Task RunExplainPlanAsync()
     {
         RefreshSqlPreview();
-        var connectionString = string.IsNullOrWhiteSpace(PlanConnectionString)
+        var connectionString = string.IsNullOrWhiteSpace(DbConnectionString)
             ? _resolvedConnectionString
-            : PlanConnectionString;
+            : DbConnectionString;
 
         PlanResultText = "Running explain plan...";
-        PlanResultText = await _planRunner.ExplainAsync(_provider, connectionString, PreparedSql, _previewResult.Parameters);
+        PlanResultText = await _planRunner.ExplainAsync(_provider, connectionString, PreparedSql, _previewResult.Parameters, CommandTimeoutSeconds);
+    }
+
+    public void ResetDbConfigFromSqlMap()
+    {
+        DbConnectionString = _resolvedConnectionString;
+        PlanResultText = "Database connection string reset from SqlMap.config.";
+    }
+
+    private void RebuildParameterRows(StatementItem? statement)
+    {
+        _isUpdatingParameterRows = true;
+        try
+        {
+            ClearParameterRows();
+            if (statement is null)
+            {
+                ParameterInput = "";
+                return;
+            }
+
+            foreach (var parameter in statement.Parameters)
+            {
+                AddParameterRow(new SqlParameterInputItem(parameter, "Parameter"));
+            }
+
+            foreach (var substitution in statement.InlineSubstitutions)
+            {
+                AddParameterRow(new SqlParameterInputItem(substitution, "Inline SQL"));
+            }
+
+            ParameterInput = BuildParameterInputText();
+        }
+        finally
+        {
+            _isUpdatingParameterRows = false;
+        }
+    }
+
+    private void ClearParameterRows()
+    {
+        foreach (var parameter in SqlParameters)
+        {
+            parameter.PropertyChanged -= ParameterInputItem_OnPropertyChanged;
+        }
+
+        SqlParameters.Clear();
+    }
+
+    private void AddParameterRow(SqlParameterInputItem parameter)
+    {
+        parameter.PropertyChanged += ParameterInputItem_OnPropertyChanged;
+        SqlParameters.Add(parameter);
+    }
+
+    private void ParameterInputItem_OnPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (_isUpdatingParameterRows || e.PropertyName != nameof(SqlParameterInputItem.Value))
+        {
+            return;
+        }
+
+        RefreshSqlPreview();
+    }
+
+    private string BuildParameterInputText()
+    {
+        if (SqlParameters.Count == 0)
+        {
+            return "";
+        }
+
+        return string.Join(Environment.NewLine, SqlParameters.Select(x => $"{x.Name}={x.Value}"));
     }
 
     private static void Replace<T>(ObservableCollection<T> target, IEnumerable<T> source)

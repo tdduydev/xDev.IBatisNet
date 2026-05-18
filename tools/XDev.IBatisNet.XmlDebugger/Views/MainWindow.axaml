@@ -208,16 +208,33 @@
 
                         <TabItem Header="SQL Preview">
                             <Grid RowDefinitions="Auto,*,Auto" RowSpacing="8">
-                                <Grid ColumnDefinitions="220,*" ColumnSpacing="8">
+                                <Grid ColumnDefinitions="280,*" ColumnSpacing="8">
                                     <StackPanel Grid.Column="0">
-                                        <TextBlock Text="Sample parameters" Classes="caption" />
-                                        <TextBox Classes="mono"
-                                                 Text="{Binding ParameterInput}"
-                                                 AcceptsReturn="True"
-                                                 MinHeight="120"
-                                                 TextWrapping="NoWrap"
-                                                 ScrollViewer.HorizontalScrollBarVisibility="Auto"
-                                                 ScrollViewer.VerticalScrollBarVisibility="Auto" />
+                                        <TextBlock Text="Parameters from XML query" Classes="caption" />
+                                        <ScrollViewer MinHeight="160"
+                                                      MaxHeight="260"
+                                                      VerticalScrollBarVisibility="Auto">
+                                            <ItemsControl ItemsSource="{Binding SqlParameters}">
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate x:DataType="models:SqlParameterInputItem">
+                                                        <Grid ColumnDefinitions="92,74,*" ColumnSpacing="6" Margin="0,0,0,6">
+                                                            <TextBlock Grid.Column="0"
+                                                                       Text="{Binding Name}"
+                                                                       TextTrimming="CharacterEllipsis"
+                                                                       VerticalAlignment="Center" />
+                                                            <TextBlock Grid.Column="1"
+                                                                       Text="{Binding Kind}"
+                                                                       Classes="caption"
+                                                                       TextTrimming="CharacterEllipsis"
+                                                                       VerticalAlignment="Center" />
+                                                            <TextBox Grid.Column="2"
+                                                                     Text="{Binding Value, UpdateSourceTrigger=PropertyChanged}"
+                                                                     PlaceholderText="{Binding Hint}" />
+                                                        </Grid>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+                                        </ScrollViewer>
                                     </StackPanel>
                                     <StackPanel Grid.Column="1">
                                         <TextBlock Text="Executable SQL" Classes="caption" />
@@ -246,19 +263,35 @@
                         </TabItem>
 
                         <TabItem Header="Explain Plan">
-                            <Grid RowDefinitions="Auto,Auto,*" RowSpacing="8">
-                                <StackPanel>
-                                    <TextBlock Text="Connection override" Classes="caption" />
-                                    <TextBox Text="{Binding PlanConnectionString}"
-                                             PlaceholderText="Leave blank to use the SqlMap.config dataSource connection string" />
-                                </StackPanel>
+                            <Grid RowDefinitions="Auto,Auto,Auto,*" RowSpacing="8">
+                                <Border Classes="panel" Padding="8">
+                                    <Grid RowDefinitions="Auto,Auto,Auto,Auto" ColumnDefinitions="130,*" RowSpacing="5" ColumnSpacing="8">
+                                        <TextBlock Grid.Row="0" Grid.Column="0" Text="Provider" Classes="caption" />
+                                        <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding DbProviderSummary}" TextWrapping="Wrap" />
+                                        <TextBlock Grid.Row="1" Grid.Column="0" Text="Parameter style" Classes="caption" />
+                                        <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding DbParameterSummary}" TextWrapping="Wrap" />
+                                        <TextBlock Grid.Row="2" Grid.Column="0" Text="Connection string" Classes="caption" />
+                                        <TextBox Grid.Row="2" Grid.Column="1"
+                                                 Text="{Binding DbConnectionString, UpdateSourceTrigger=PropertyChanged}" />
+                                        <TextBlock Grid.Row="3" Grid.Column="0" Text="Timeout seconds" Classes="caption" />
+                                        <TextBox Grid.Row="3" Grid.Column="1"
+                                                 Width="90"
+                                                 HorizontalAlignment="Left"
+                                                 Text="{Binding CommandTimeoutSeconds, UpdateSourceTrigger=PropertyChanged}" />
+                                    </Grid>
+                                </Border>
 
                                 <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="8">
+                                    <Button Content="Reset DB config" Click="ResetDbConfigButton_OnClick" />
+                                    <TextBlock Text="Values come from SqlMap.config/providers.config; edit the connection string here for a test database." Classes="caption" VerticalAlignment="Center" />
+                                </StackPanel>
+
+                                <StackPanel Grid.Row="2" Orientation="Horizontal" Spacing="8">
                                     <Button Content="Run explain plan" Click="RunExplainPlanButton_OnClick" />
                                     <TextBlock Text="Only SELECT/WITH statements are planned; mutating SQL is blocked." Classes="caption" VerticalAlignment="Center" />
                                 </StackPanel>
 
-                                <TextBox Grid.Row="2"
+                                <TextBox Grid.Row="3"
                                          Classes="mono"
                                          Text="{Binding PlanResultText}"
                                          AcceptsReturn="True"
