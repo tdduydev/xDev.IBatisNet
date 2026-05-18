@@ -369,6 +369,7 @@ namespace IBatisNet.DataMapper.Test.NUnit.SqlMapTests
         /// Test ExecuteQueryForPaginatedList
         /// </summary>
         [Test]
+#pragma warning disable 0618
         public void TestExecuteQueryForPaginatedList()
         {
             // Get List of all 5
@@ -522,6 +523,7 @@ namespace IBatisNet.DataMapper.Test.NUnit.SqlMapTests
             list.PreviousPage();
             Assert.AreEqual(5, list.Count);
         }
+#pragma warning restore 0618
 
         /// <summary>
         /// Test QueryForList with ResultObject : 

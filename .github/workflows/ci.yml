@@ -37,7 +37,7 @@ permissions:
 jobs:
   build:
     name: Build
-    runs-on: windows-latest
+    runs-on: windows-2025-vs2026
     env:
       NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
       NUGET_TEST_API_KEY: ${{ secrets.NUGET_TEST_API_KEY }}

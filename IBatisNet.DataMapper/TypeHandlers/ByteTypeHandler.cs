@@ -115,13 +115,11 @@ namespace IBatisNet.DataMapper.TypeHandlers
 			get { return true; }
 		}
 
-        /// <summary>
-        /// The null value for this type
-        /// </summary>
-        /// <value></value>
-        //public override object NullValue
-        //{
-        //    get { throw new InvalidCastException("ByteTypeHandler, could not cast a null value in byte field."); }
-        //}
+        // The null value override is intentionally left disabled for
+        // compatibility with the inherited iBATIS.NET behavior.
+        // public override object NullValue
+        // {
+        //     get { throw new InvalidCastException("ByteTypeHandler, could not cast a null value in byte field."); }
+        // }
 	}
 }

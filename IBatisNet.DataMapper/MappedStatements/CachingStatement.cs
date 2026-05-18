@@ -49,7 +49,11 @@ namespace IBatisNet.DataMapper.MappedStatements
 		/// <summary>
 		/// Event launch on exceute query
 		/// </summary>
-		public event ExecuteEventHandler Execute;
+		public event ExecuteEventHandler Execute
+		{
+			add { _mappedStatement.Execute += value; }
+			remove { _mappedStatement.Execute -= value; }
+		}
 
 		/// <summary>
 		/// Constructor

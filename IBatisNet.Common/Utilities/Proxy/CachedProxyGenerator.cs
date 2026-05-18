@@ -51,12 +51,21 @@ namespace IBatisNet.Common.Utilities.Proxy {
 		private readonly IDictionary _cachedProxyTypes;
 
 		/// <summary>
-		/// Cosntructor
+		/// Constructor
 		/// </summary>
 		public CachedProxyGenerator() {
 			this._cachedProxyTypes = new HybridDictionary();
 		}
 
+		/// <summary>
+		/// Creates a cached class proxy type and returns a class proxy instance.
+		/// </summary>
+		/// <param name="classToProxy">The class type to proxy.</param>
+		/// <param name="additionalInterfacesToProxy">Additional interfaces to proxy.</param>
+		/// <param name="options">Proxy generation options.</param>
+		/// <param name="constructorArguments">Constructor arguments for the proxied class.</param>
+		/// <param name="interceptors">Interceptors to attach to the proxy.</param>
+		/// <returns>A Castle DynamicProxy class proxy instance.</returns>
 		public override object CreateClassProxy(Type classToProxy, Type[] additionalInterfacesToProxy, ProxyGenerationOptions options, object[] constructorArguments, params IInterceptor[] interceptors) {
 			try {
 				if (classToProxy == null) {
@@ -93,6 +102,16 @@ namespace IBatisNet.Common.Utilities.Proxy {
 			}
 		}
 
+		/// <summary>
+		/// Creates a cached class proxy type and returns a proxy instance for an existing target object.
+		/// </summary>
+		/// <param name="classToProxy">The class type to proxy.</param>
+		/// <param name="additionalInterfacesToProxy">Additional interfaces to proxy.</param>
+		/// <param name="target">The target object to proxy.</param>
+		/// <param name="options">Proxy generation options.</param>
+		/// <param name="constructorArguments">Constructor arguments for the proxied class.</param>
+		/// <param name="interceptors">Interceptors to attach to the proxy.</param>
+		/// <returns>A Castle DynamicProxy class proxy instance.</returns>
 		public override object CreateClassProxyWithTarget(Type classToProxy, Type[] additionalInterfacesToProxy, object target, ProxyGenerationOptions options, object[] constructorArguments, params IInterceptor[] interceptors) {
 			try {
 				if (classToProxy == null) {
@@ -127,6 +146,14 @@ namespace IBatisNet.Common.Utilities.Proxy {
 			}
 		}
 
+		/// <summary>
+		/// Creates a cached interface proxy type without a target object.
+		/// </summary>
+		/// <param name="interfaceToProxy">The interface type to proxy.</param>
+		/// <param name="additionalInterfacesToProxy">Additional interfaces to proxy.</param>
+		/// <param name="options">Proxy generation options.</param>
+		/// <param name="interceptors">Interceptors to attach to the proxy.</param>
+		/// <returns>A Castle DynamicProxy interface proxy instance.</returns>
 		public override object CreateInterfaceProxyWithoutTarget(Type interfaceToProxy, Type[] additionalInterfacesToProxy, ProxyGenerationOptions options, params IInterceptor[] interceptors) {
 			if (interfaceToProxy == null) {
 				throw new ArgumentNullException("interfaceToProxy");
@@ -150,6 +177,15 @@ namespace IBatisNet.Common.Utilities.Proxy {
 			return Activator.CreateInstance(proxyType, this.GetConstructorArguments(null, interceptors, options).ToArray());
 		}
 
+		/// <summary>
+		/// Creates a cached interface proxy type for an existing target object.
+		/// </summary>
+		/// <param name="interfaceToProxy">The interface type to proxy.</param>
+		/// <param name="additionalInterfacesToProxy">Additional interfaces to proxy.</param>
+		/// <param name="target">The target object to proxy.</param>
+		/// <param name="options">Proxy generation options.</param>
+		/// <param name="interceptors">Interceptors to attach to the proxy.</param>
+		/// <returns>A Castle DynamicProxy interface proxy instance.</returns>
 		public override object CreateInterfaceProxyWithTarget(Type interfaceToProxy, Type[] additionalInterfacesToProxy, object target, ProxyGenerationOptions options, params IInterceptor[] interceptors) {
 			if (interfaceToProxy == null) {
 				throw new ArgumentNullException("interfaceToProxy");
@@ -180,6 +216,15 @@ namespace IBatisNet.Common.Utilities.Proxy {
 			return Activator.CreateInstance(proxyTypeWithTarget, this.GetConstructorArguments(target, interceptors, options).ToArray());
 		}
 
+		/// <summary>
+		/// Creates a cached interface proxy type whose target interface can be supplied separately.
+		/// </summary>
+		/// <param name="interfaceToProxy">The interface type to proxy.</param>
+		/// <param name="additionalInterfacesToProxy">Additional interfaces to proxy.</param>
+		/// <param name="target">The target object to proxy.</param>
+		/// <param name="options">Proxy generation options.</param>
+		/// <param name="interceptors">Interceptors to attach to the proxy.</param>
+		/// <returns>A Castle DynamicProxy interface proxy instance.</returns>
 		[SecuritySafeCritical]
 		public override object CreateInterfaceProxyWithTargetInterface(Type interfaceToProxy, Type[] additionalInterfacesToProxy, object target, ProxyGenerationOptions options, params IInterceptor[] interceptors) {
 			if (target != null && !interfaceToProxy.IsInstanceOfType(target)) {

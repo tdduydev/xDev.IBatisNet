@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RuleSet Name="All Rules" Description="Compatibility ruleset for legacy Visual Studio projects." ToolsVersion="10.0">
+  <IncludeAll Action="Warning" />
+</RuleSet>
