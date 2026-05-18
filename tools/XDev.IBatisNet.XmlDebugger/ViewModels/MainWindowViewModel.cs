@@ -26,6 +26,10 @@ public sealed partial class MainWindowViewModel : ViewModelBase
     private string _searchText = "";
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(FilteredDiagnostics))]
+    private string _issueSearchText = "";
+
+    [ObservableProperty]
     private string _configPath = "";
 
     [ObservableProperty]
@@ -48,6 +52,9 @@ public sealed partial class MainWindowViewModel : ViewModelBase
 
     [ObservableProperty]
     private StatementItem? _selectedStatement;
+
+    [ObservableProperty]
+    private DiagnosticItem? _selectedDiagnostic;
 
     [ObservableProperty]
     private string _parameterInput = "";
@@ -83,6 +90,89 @@ public sealed partial class MainWindowViewModel : ViewModelBase
     public ObservableCollection<StatementItem> Statements { get; } = [];
     public ObservableCollection<DiagnosticItem> Diagnostics { get; } = [];
     public ObservableCollection<SqlParameterInputItem> SqlParameters { get; } = [];
+
+    public string AnalysisHealthText
+    {
+        get
+        {
+            if (Diagnostics.Count == 0 && Statements.Count == 0)
+            {
+                return "Ready";
+            }
+
+            if (ErrorCount > 0)
+            {
+                return "Blocked";
+            }
+
+            if (SecurityCount > 0)
+            {
+                return "Security review";
+            }
+
+            if (WarningCount > 0)
+            {
+                return "Review";
+            }
+
+            return "Clean";
+        }
+    }
+
+    public int ErrorCount => Diagnostics.Count(x => x.Severity.Equals("Error", StringComparison.OrdinalIgnoreCase));
+    public int WarningCount => Diagnostics.Count(x => x.Severity.Equals("Warning", StringComparison.OrdinalIgnoreCase));
+    public int SecurityCount => Diagnostics.Count(x => x.Severity.Equals("Security", StringComparison.OrdinalIgnoreCase));
+    public int InfoCount => Diagnostics.Count(x => x.Severity.Equals("Info", StringComparison.OrdinalIgnoreCase));
+    public int StatementCount => Statements.Count;
+    public int MapCount => SqlMapFiles.Count;
+    public int InlineSqlCount => Statements.Sum(x => x.InlineSubstitutions.Count);
+    public int ParameterCount => Statements.Sum(x => x.Parameters.Count);
+
+    public string IssueCountText => $"{SecurityCount} security · {ErrorCount} errors · {WarningCount} warnings";
+    public string MapCountText => $"{MapCount} maps";
+    public string StatementCountText => $"{StatementCount} statements";
+    public string InlineSqlCountText => $"{InlineSqlCount} raw inline";
+    public string ParameterCountText => $"{ParameterCount} parameters";
+
+    public IEnumerable<DiagnosticItem> FilteredDiagnostics
+    {
+        get
+        {
+            if (string.IsNullOrWhiteSpace(IssueSearchText))
+            {
+                return Diagnostics;
+            }
+
+            var term = IssueSearchText.Trim();
+            return Diagnostics.Where(issue =>
+                issue.Severity.Contains(term, StringComparison.OrdinalIgnoreCase) ||
+                issue.Message.Contains(term, StringComparison.OrdinalIgnoreCase) ||
+                issue.DisplayPath.Contains(term, StringComparison.OrdinalIgnoreCase) ||
+                (issue.Location?.Contains(term, StringComparison.OrdinalIgnoreCase) ?? false));
+        }
+    }
+
+    public IEnumerable<DiagnosticItem> SelectedStatementDiagnostics
+    {
+        get
+        {
+            if (SelectedStatement is null)
+            {
+                return [];
+            }
+
+            return Diagnostics.Where(issue => MatchesStatement(issue, SelectedStatement));
+        }
+    }
+
+    public string SelectedStatementIssueText
+    {
+        get
+        {
+            var count = SelectedStatementDiagnostics.Count();
+            return count == 0 ? "No linked issues" : $"{count} linked issues";
+        }
+    }
 
     public IEnumerable<StatementItem> FilteredStatements
     {
@@ -125,9 +215,14 @@ public sealed partial class MainWindowViewModel : ViewModelBase
         Replace(Statements, result.Statements);
         Replace(Diagnostics, result.Diagnostics);
 
-        SelectedStatement = Statements.FirstOrDefault();
+        SelectedDiagnostic = Diagnostics.FirstOrDefault(x =>
+            x.Severity.Equals("Error", StringComparison.OrdinalIgnoreCase) ||
+            x.Severity.Equals("Security", StringComparison.OrdinalIgnoreCase));
+        SelectedStatement = SelectedDiagnostic is null
+            ? Statements.FirstOrDefault()
+            : FindStatementForDiagnostic(SelectedDiagnostic) ?? Statements.FirstOrDefault();
         StatusText = $"{result.Statements.Count} statements, {result.SqlMapFiles.Count} maps, {result.ErrorCount} errors, {result.WarningCount} warnings, analyzed in {result.ElapsedText}";
-        OnPropertyChanged(nameof(FilteredStatements));
+        NotifyAnalysisPropertiesChanged();
     }
 
     public void Clear()
@@ -138,6 +233,9 @@ public sealed partial class MainWindowViewModel : ViewModelBase
         ProviderDetails = "";
         StatusText = "Ready";
         SelectedStatement = null;
+        SelectedDiagnostic = null;
+        IssueSearchText = "";
+        SearchText = "";
         ParameterInput = "";
         PreparedSql = "";
         SqlPreviewStatus = "Choose a statement to preview SQL.";
@@ -157,7 +255,7 @@ public sealed partial class MainWindowViewModel : ViewModelBase
         SqlMapFiles.Clear();
         Statements.Clear();
         Diagnostics.Clear();
-        OnPropertyChanged(nameof(FilteredStatements));
+        NotifyAnalysisPropertiesChanged();
     }
 
     partial void OnSearchTextChanged(string value)
@@ -165,10 +263,31 @@ public sealed partial class MainWindowViewModel : ViewModelBase
         OnPropertyChanged(nameof(FilteredStatements));
     }
 
+    partial void OnIssueSearchTextChanged(string value)
+    {
+        OnPropertyChanged(nameof(FilteredDiagnostics));
+    }
+
     partial void OnSelectedStatementChanged(StatementItem? value)
     {
         RebuildParameterRows(value);
         RefreshSqlPreview();
+        OnPropertyChanged(nameof(SelectedStatementDiagnostics));
+        OnPropertyChanged(nameof(SelectedStatementIssueText));
+    }
+
+    partial void OnSelectedDiagnosticChanged(DiagnosticItem? value)
+    {
+        if (value is null)
+        {
+            return;
+        }
+
+        var statement = FindStatementForDiagnostic(value);
+        if (statement is not null)
+        {
+            SelectedStatement = statement;
+        }
     }
 
     partial void OnParameterInputChanged(string value)
@@ -322,5 +441,67 @@ public sealed partial class MainWindowViewModel : ViewModelBase
         {
             target.Add(item);
         }
+    }
+
+    private StatementItem? FindStatementForDiagnostic(DiagnosticItem issue)
+    {
+        if (!string.IsNullOrWhiteSpace(issue.Location))
+        {
+            var byId = Statements.FirstOrDefault(statement =>
+                statement.Id.Equals(issue.Location, StringComparison.OrdinalIgnoreCase) ||
+                statement.DisplayName.Equals(issue.Location, StringComparison.OrdinalIgnoreCase));
+            if (byId is not null)
+            {
+                return byId;
+            }
+        }
+
+        if (!string.IsNullOrWhiteSpace(issue.FilePath))
+        {
+            return Statements.FirstOrDefault(statement =>
+                statement.FilePath.Equals(issue.FilePath, StringComparison.OrdinalIgnoreCase));
+        }
+
+        return null;
+    }
+
+    private static bool MatchesStatement(DiagnosticItem issue, StatementItem statement)
+    {
+        if (!string.IsNullOrWhiteSpace(issue.FilePath) &&
+            !issue.FilePath.Equals(statement.FilePath, StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        if (string.IsNullOrWhiteSpace(issue.Location))
+        {
+            return true;
+        }
+
+        return issue.Location.Equals(statement.Id, StringComparison.OrdinalIgnoreCase) ||
+            issue.Location.Equals(statement.DisplayName, StringComparison.OrdinalIgnoreCase) ||
+            issue.Location.StartsWith("line ", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private void NotifyAnalysisPropertiesChanged()
+    {
+        OnPropertyChanged(nameof(FilteredStatements));
+        OnPropertyChanged(nameof(FilteredDiagnostics));
+        OnPropertyChanged(nameof(SelectedStatementDiagnostics));
+        OnPropertyChanged(nameof(SelectedStatementIssueText));
+        OnPropertyChanged(nameof(AnalysisHealthText));
+        OnPropertyChanged(nameof(ErrorCount));
+        OnPropertyChanged(nameof(WarningCount));
+        OnPropertyChanged(nameof(SecurityCount));
+        OnPropertyChanged(nameof(InfoCount));
+        OnPropertyChanged(nameof(StatementCount));
+        OnPropertyChanged(nameof(MapCount));
+        OnPropertyChanged(nameof(InlineSqlCount));
+        OnPropertyChanged(nameof(ParameterCount));
+        OnPropertyChanged(nameof(IssueCountText));
+        OnPropertyChanged(nameof(MapCountText));
+        OnPropertyChanged(nameof(StatementCountText));
+        OnPropertyChanged(nameof(InlineSqlCountText));
+        OnPropertyChanged(nameof(ParameterCountText));
     }
 }

@@ -5,10 +5,10 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d"
-        d:DesignWidth="1280"
-        d:DesignHeight="820"
-        MinWidth="1040"
-        MinHeight="680"
+        d:DesignWidth="1380"
+        d:DesignHeight="860"
+        MinWidth="1120"
+        MinHeight="720"
         x:Class="XDev.IBatisNet.XmlDebugger.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
         Icon="/Assets/avalonia-logo.ico"
@@ -19,7 +19,14 @@
     </Design.DataContext>
 
     <Window.Styles>
-        <Style Selector="Border.panel">
+        <Style Selector="Border.surface">
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundAltHighBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource SystemControlForegroundBaseLowBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="6" />
+            <Setter Property="Padding" Value="10" />
+        </Style>
+        <Style Selector="Border.metric">
             <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundAltHighBrush}" />
             <Setter Property="BorderBrush" Value="{DynamicResource SystemControlForegroundBaseLowBrush}" />
             <Setter Property="BorderThickness" Value="1" />
@@ -31,7 +38,11 @@
             <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseMediumBrush}" />
         </Style>
         <Style Selector="TextBlock.heading">
-            <Setter Property="FontSize" Value="15" />
+            <Setter Property="FontSize" Value="16" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+        </Style>
+        <Style Selector="TextBlock.metricValue">
+            <Setter Property="FontSize" Value="22" />
             <Setter Property="FontWeight" Value="SemiBold" />
         </Style>
         <Style Selector="TextBox.mono">
@@ -41,269 +52,332 @@
     </Window.Styles>
 
     <DockPanel Margin="12">
-        <Border DockPanel.Dock="Top" Classes="panel" Margin="0,0,0,10">
-            <Grid RowDefinitions="Auto,Auto,Auto" ColumnDefinitions="100,*,Auto,Auto" RowSpacing="8" ColumnSpacing="8">
-                <TextBlock Grid.Row="0" Grid.Column="0" Text="Config/map file" VerticalAlignment="Center" Classes="caption" />
-                <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding ConfigPath}" />
-                <Button Grid.Row="0" Grid.Column="2" Content="Browse" Click="BrowseConfigButton_OnClick" />
-                <Button Grid.Row="0" Grid.Column="3" Content="Analyze" Click="AnalyzeButton_OnClick" />
+        <Grid DockPanel.Dock="Top" RowDefinitions="Auto,Auto" RowSpacing="10" Margin="0,0,0,10">
+            <Border Classes="surface">
+                <Grid RowDefinitions="Auto,Auto" ColumnDefinitions="92,*,Auto,Auto" RowSpacing="8" ColumnSpacing="8">
+                    <TextBlock Grid.Row="0" Grid.Column="0" Text="Config" VerticalAlignment="Center" Classes="caption" />
+                    <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding ConfigPath}" />
+                    <Button Grid.Row="0" Grid.Column="2" Content="Browse" Click="BrowseConfigButton_OnClick" />
+                    <Button Grid.Row="0" Grid.Column="3" Content="Analyze" Click="AnalyzeButton_OnClick" />
 
-                <TextBlock Grid.Row="1" Grid.Column="0" Text="Working root" VerticalAlignment="Center" Classes="caption" />
-                <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding WorkingRoot}" />
-                <Button Grid.Row="1" Grid.Column="2" Content="Folder" Click="BrowseRootButton_OnClick" />
-                <Button Grid.Row="1" Grid.Column="3" Content="Clear" Click="ClearButton_OnClick" />
-
-                <Grid Grid.Row="2" Grid.ColumnSpan="4" ColumnDefinitions="*,*,*" ColumnSpacing="8">
-                    <StackPanel Grid.Column="0">
-                        <TextBlock Text="Provider" Classes="caption" />
-                        <TextBlock Text="{Binding ProviderDetails}" TextTrimming="CharacterEllipsis" />
-                    </StackPanel>
-                    <StackPanel Grid.Column="1">
-                        <TextBlock Text="Data source" Classes="caption" />
-                        <TextBlock Text="{Binding DataSourceName}" TextTrimming="CharacterEllipsis" />
-                    </StackPanel>
-                    <StackPanel Grid.Column="2">
-                        <TextBlock Text="Connection" Classes="caption" />
-                        <TextBlock Text="{Binding ConnectionStringPreview}" TextTrimming="CharacterEllipsis" />
-                    </StackPanel>
+                    <TextBlock Grid.Row="1" Grid.Column="0" Text="Root" VerticalAlignment="Center" Classes="caption" />
+                    <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding WorkingRoot}" />
+                    <Button Grid.Row="1" Grid.Column="2" Content="Folder" Click="BrowseRootButton_OnClick" />
+                    <Button Grid.Row="1" Grid.Column="3" Content="Clear" Click="ClearButton_OnClick" />
                 </Grid>
+            </Border>
+
+            <Grid Grid.Row="1" ColumnDefinitions="*,*,*,*,*" ColumnSpacing="8">
+                <Border Grid.Column="0" Classes="metric">
+                    <StackPanel>
+                        <TextBlock Text="Health" Classes="caption" />
+                        <TextBlock Text="{Binding AnalysisHealthText}" Classes="metricValue" />
+                        <TextBlock Text="{Binding IssueCountText}" Classes="caption" />
+                    </StackPanel>
+                </Border>
+                <Border Grid.Column="1" Classes="metric">
+                    <StackPanel>
+                        <TextBlock Text="Statements" Classes="caption" />
+                        <TextBlock Text="{Binding StatementCount}" Classes="metricValue" />
+                        <TextBlock Text="{Binding ParameterCountText}" Classes="caption" />
+                    </StackPanel>
+                </Border>
+                <Border Grid.Column="2" Classes="metric">
+                    <StackPanel>
+                        <TextBlock Text="Raw Inline SQL" Classes="caption" />
+                        <TextBlock Text="{Binding InlineSqlCount}" Classes="metricValue" />
+                        <TextBlock Text="$...$ substitutions" Classes="caption" />
+                    </StackPanel>
+                </Border>
+                <Border Grid.Column="3" Classes="metric">
+                    <StackPanel>
+                        <TextBlock Text="Maps" Classes="caption" />
+                        <TextBlock Text="{Binding MapCount}" Classes="metricValue" />
+                        <TextBlock Text="{Binding ProviderDetails}" Classes="caption" TextTrimming="CharacterEllipsis" />
+                    </StackPanel>
+                </Border>
+                <Border Grid.Column="4" Classes="metric">
+                    <StackPanel>
+                        <TextBlock Text="Data Source" Classes="caption" />
+                        <TextBlock Text="{Binding DataSourceName}" Classes="metricValue" TextTrimming="CharacterEllipsis" />
+                        <TextBlock Text="{Binding ConnectionStringPreview}" Classes="caption" TextTrimming="CharacterEllipsis" />
+                    </StackPanel>
+                </Border>
             </Grid>
-        </Border>
+        </Grid>
 
         <TextBlock DockPanel.Dock="Bottom" Text="{Binding StatusText}" Classes="caption" Margin="2,8,0,0" />
 
-        <Grid ColumnDefinitions="320,360,*" ColumnSpacing="10">
-            <Border Grid.Column="0" Classes="panel">
+        <Grid ColumnDefinitions="370,*" ColumnSpacing="10">
+            <Border Grid.Column="0" Classes="surface">
                 <TabControl>
-                    <TabItem Header="Diagnostics">
-                        <ListBox ItemsSource="{Binding Diagnostics}">
-                            <ListBox.ItemTemplate>
-                                <DataTemplate x:DataType="models:DiagnosticItem">
-                                    <Border Padding="0,7" BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}" BorderThickness="0,0,0,1">
-                                        <StackPanel>
-                                            <TextBlock Text="{Binding Severity}" FontWeight="SemiBold" />
-                                            <TextBlock Text="{Binding Message}" TextWrapping="Wrap" />
-                                            <TextBlock Text="{Binding DisplayPath}" Classes="caption" TextTrimming="CharacterEllipsis" />
-                                            <TextBlock Text="{Binding Location}" Classes="caption" />
-                                        </StackPanel>
-                                    </Border>
-                                </DataTemplate>
-                            </ListBox.ItemTemplate>
-                        </ListBox>
+                    <TabItem Header="Issues">
+                        <DockPanel>
+                            <TextBox DockPanel.Dock="Top"
+                                     PlaceholderText="Filter issues"
+                                     Text="{Binding IssueSearchText}"
+                                     Margin="0,0,0,8" />
+                            <ListBox ItemsSource="{Binding FilteredDiagnostics}"
+                                     SelectedItem="{Binding SelectedDiagnostic}">
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate x:DataType="models:DiagnosticItem">
+                                        <Border Padding="0,8" BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}" BorderThickness="0,0,0,1">
+                                            <StackPanel Spacing="3">
+                                                <TextBlock Text="{Binding Summary}" FontWeight="SemiBold" />
+                                                <TextBlock Text="{Binding Message}" TextWrapping="Wrap" />
+                                                <TextBlock Text="{Binding ShortPath}" Classes="caption" TextTrimming="CharacterEllipsis" />
+                                            </StackPanel>
+                                        </Border>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
+                        </DockPanel>
                     </TabItem>
+
                     <TabItem Header="Maps">
                         <ListBox ItemsSource="{Binding SqlMapFiles}">
                             <ListBox.ItemTemplate>
                                 <DataTemplate x:DataType="models:SqlMapFileItem">
-                                    <Border Padding="0,7" BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}" BorderThickness="0,0,0,1">
-                                        <StackPanel>
-                                            <TextBlock Text="{Binding Source}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+                                    <Border Padding="0,8" BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}" BorderThickness="0,0,0,1">
+                                        <StackPanel Spacing="3">
+                                            <TextBlock Text="{Binding DisplayName}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+                                            <TextBlock Text="{Binding Summary}" Classes="caption" />
                                             <TextBlock Text="{Binding ResolvedPath}" Classes="caption" TextTrimming="CharacterEllipsis" />
-                                            <TextBlock Text="{Binding Status}" Classes="caption" />
-                                            <TextBlock Text="{Binding StatementCount, StringFormat='Statements: {0}'}" Classes="caption" />
                                         </StackPanel>
                                     </Border>
                                 </DataTemplate>
                             </ListBox.ItemTemplate>
                         </ListBox>
                     </TabItem>
-                    <TabItem Header="Properties">
+
+                    <TabItem Header="Config">
                         <ScrollViewer>
-                            <StackPanel>
-                                <TextBlock Text="Properties" Classes="heading" Margin="0,0,0,6" />
-                                <ItemsControl ItemsSource="{Binding Properties}">
-                                    <ItemsControl.ItemTemplate>
-                                        <DataTemplate x:DataType="models:PropertyItem">
-                                            <Grid ColumnDefinitions="120,*" Margin="0,0,0,5">
-                                                <TextBlock Grid.Column="0" Text="{Binding Key}" Classes="caption" TextTrimming="CharacterEllipsis" />
-                                                <TextBlock Grid.Column="1" Text="{Binding Value}" TextWrapping="Wrap" />
-                                            </Grid>
-                                        </DataTemplate>
-                                    </ItemsControl.ItemTemplate>
-                                </ItemsControl>
-                                <TextBlock Text="Settings" Classes="heading" Margin="0,10,0,6" />
-                                <ItemsControl ItemsSource="{Binding Settings}">
-                                    <ItemsControl.ItemTemplate>
-                                        <DataTemplate x:DataType="models:PropertyItem">
-                                            <Grid ColumnDefinitions="120,*" Margin="0,0,0,5">
-                                                <TextBlock Grid.Column="0" Text="{Binding Key}" Classes="caption" TextTrimming="CharacterEllipsis" />
-                                                <TextBlock Grid.Column="1" Text="{Binding Value}" TextWrapping="Wrap" />
-                                            </Grid>
-                                        </DataTemplate>
-                                    </ItemsControl.ItemTemplate>
-                                </ItemsControl>
-                                <TextBlock Text="Aliases" Classes="heading" Margin="0,10,0,6" />
-                                <ItemsControl ItemsSource="{Binding Aliases}">
-                                    <ItemsControl.ItemTemplate>
-                                        <DataTemplate x:DataType="models:PropertyItem">
-                                            <Grid ColumnDefinitions="120,*" Margin="0,0,0,5">
-                                                <TextBlock Grid.Column="0" Text="{Binding Key}" Classes="caption" TextTrimming="CharacterEllipsis" />
-                                                <TextBlock Grid.Column="1" Text="{Binding Value}" TextWrapping="Wrap" />
-                                            </Grid>
-                                        </DataTemplate>
-                                    </ItemsControl.ItemTemplate>
-                                </ItemsControl>
+                            <StackPanel Spacing="10">
+                                <StackPanel>
+                                    <TextBlock Text="Provider" Classes="heading" Margin="0,0,0,5" />
+                                    <TextBlock Text="{Binding ProviderDetails}" TextWrapping="Wrap" />
+                                </StackPanel>
+                                <StackPanel>
+                                    <TextBlock Text="Settings" Classes="heading" Margin="0,0,0,5" />
+                                    <ItemsControl ItemsSource="{Binding Settings}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate x:DataType="models:PropertyItem">
+                                                <Grid ColumnDefinitions="130,*" ColumnSpacing="8" Margin="0,0,0,5">
+                                                    <TextBlock Grid.Column="0" Text="{Binding Key}" Classes="caption" TextTrimming="CharacterEllipsis" />
+                                                    <TextBlock Grid.Column="1" Text="{Binding Value}" TextWrapping="Wrap" />
+                                                </Grid>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </StackPanel>
+                                <StackPanel>
+                                    <TextBlock Text="Properties" Classes="heading" Margin="0,0,0,5" />
+                                    <ItemsControl ItemsSource="{Binding Properties}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate x:DataType="models:PropertyItem">
+                                                <Grid ColumnDefinitions="130,*" ColumnSpacing="8" Margin="0,0,0,5">
+                                                    <TextBlock Grid.Column="0" Text="{Binding Key}" Classes="caption" TextTrimming="CharacterEllipsis" />
+                                                    <TextBlock Grid.Column="1" Text="{Binding Value}" TextWrapping="Wrap" />
+                                                </Grid>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </StackPanel>
+                                <StackPanel>
+                                    <TextBlock Text="Aliases" Classes="heading" Margin="0,0,0,5" />
+                                    <ItemsControl ItemsSource="{Binding Aliases}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate x:DataType="models:PropertyItem">
+                                                <Grid ColumnDefinitions="130,*" ColumnSpacing="8" Margin="0,0,0,5">
+                                                    <TextBlock Grid.Column="0" Text="{Binding Key}" Classes="caption" TextTrimming="CharacterEllipsis" />
+                                                    <TextBlock Grid.Column="1" Text="{Binding Value}" TextWrapping="Wrap" />
+                                                </Grid>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </StackPanel>
                             </StackPanel>
                         </ScrollViewer>
                     </TabItem>
                 </TabControl>
             </Border>
 
-            <Border Grid.Column="1" Classes="panel">
-                <DockPanel>
-                    <StackPanel DockPanel.Dock="Top" Margin="0,0,0,8">
-                        <TextBlock Text="Statements" Classes="heading" />
-                        <TextBox PlaceholderText="Search" Text="{Binding SearchText}" Margin="0,8,0,0" />
-                    </StackPanel>
-                    <ListBox ItemsSource="{Binding FilteredStatements}" SelectedItem="{Binding SelectedStatement}">
-                        <ListBox.ItemTemplate>
-                            <DataTemplate x:DataType="models:StatementItem">
-                                <Border Padding="0,7" BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}" BorderThickness="0,0,0,1">
-                                    <StackPanel>
-                                        <TextBlock Text="{Binding DisplayName}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
-                                        <TextBlock Text="{Binding Kind}" Classes="caption" />
-                                        <TextBlock Text="{Binding FilePath}" Classes="caption" TextTrimming="CharacterEllipsis" />
-                                    </StackPanel>
-                                </Border>
-                            </DataTemplate>
-                        </ListBox.ItemTemplate>
-                    </ListBox>
-                </DockPanel>
-            </Border>
+            <Grid Grid.Column="1" ColumnDefinitions="360,*" ColumnSpacing="10">
+                <Border Grid.Column="0" Classes="surface">
+                    <DockPanel>
+                        <StackPanel DockPanel.Dock="Top" Margin="0,0,0,8" Spacing="6">
+                            <TextBlock Text="Statements" Classes="heading" />
+                            <TextBox PlaceholderText="Search id, map, SQL"
+                                     Text="{Binding SearchText}" />
+                        </StackPanel>
+                        <ListBox ItemsSource="{Binding FilteredStatements}"
+                                 SelectedItem="{Binding SelectedStatement}">
+                            <ListBox.ItemTemplate>
+                                <DataTemplate x:DataType="models:StatementItem">
+                                    <Border Padding="0,8" BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}" BorderThickness="0,0,0,1">
+                                        <StackPanel Spacing="3">
+                                            <TextBlock Text="{Binding DisplayName}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+                                            <TextBlock Text="{Binding Signature}" Classes="caption" />
+                                            <TextBlock Text="{Binding ShortFileName}" Classes="caption" TextTrimming="CharacterEllipsis" />
+                                            <TextBlock Text="{Binding RiskSummary}" Classes="caption" />
+                                        </StackPanel>
+                                    </Border>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+                    </DockPanel>
+                </Border>
 
-            <Border Grid.Column="2" Classes="panel">
-                <Grid RowDefinitions="Auto,Auto,*" RowSpacing="10">
-                    <StackPanel>
-                        <TextBlock Text="{Binding SelectedStatement.DisplayName}" Classes="heading" />
-                        <TextBlock Text="{Binding SelectedStatement.FilePath}" Classes="caption" TextTrimming="CharacterEllipsis" />
-                    </StackPanel>
+                <Border Grid.Column="1" Classes="surface">
+                    <Grid RowDefinitions="Auto,Auto,*" RowSpacing="10">
+                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
+                            <StackPanel>
+                                <TextBlock Text="{Binding SelectedStatement.DisplayName}" Classes="heading" />
+                                <TextBlock Text="{Binding SelectedStatement.FilePath}" Classes="caption" TextTrimming="CharacterEllipsis" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="1" HorizontalAlignment="Right">
+                                <TextBlock Text="{Binding SelectedStatementIssueText}" Classes="caption" HorizontalAlignment="Right" />
+                                <TextBlock Text="{Binding SelectedStatement.RiskSummary}" FontWeight="SemiBold" HorizontalAlignment="Right" />
+                            </StackPanel>
+                        </Grid>
 
-                    <Grid Grid.Row="1" ColumnDefinitions="140,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto" ColumnSpacing="8" RowSpacing="4">
-                        <TextBlock Grid.Row="0" Grid.Column="0" Text="Kind" Classes="caption" />
-                        <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding SelectedStatement.Kind}" />
-                        <TextBlock Grid.Row="1" Grid.Column="0" Text="Parameter class/map" Classes="caption" />
-                        <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding SelectedStatement.ParameterClass}" TextWrapping="Wrap" />
-                        <TextBlock Grid.Row="2" Grid.Column="0" Text="Result class" Classes="caption" />
-                        <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding SelectedStatement.ResultClass}" TextWrapping="Wrap" />
-                        <TextBlock Grid.Row="3" Grid.Column="0" Text="Result map" Classes="caption" />
-                        <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding SelectedStatement.ResultMap}" TextWrapping="Wrap" />
-                        <TextBlock Grid.Row="4" Grid.Column="0" Text="Parameters" Classes="caption" />
-                        <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding SelectedStatement.ParameterText}" TextWrapping="Wrap" />
-                        <TextBlock Grid.Row="5" Grid.Column="0" Text="Inline SQL" Classes="caption" />
-                        <TextBlock Grid.Row="5" Grid.Column="1" Text="{Binding SelectedStatement.InlineSubstitutionText}" TextWrapping="Wrap" />
-                        <TextBlock Grid.Row="6" Grid.Column="0" Text="Includes" Classes="caption" />
-                        <TextBlock Grid.Row="6" Grid.Column="1" Text="{Binding SelectedStatement.IncludeText}" TextWrapping="Wrap" />
-                    </Grid>
+                        <Grid Grid.Row="1" ColumnDefinitions="*,*" ColumnSpacing="12">
+                            <Grid ColumnDefinitions="120,*" RowDefinitions="Auto,Auto,Auto,Auto" ColumnSpacing="8" RowSpacing="4">
+                                <TextBlock Grid.Row="0" Grid.Column="0" Text="Kind" Classes="caption" />
+                                <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding SelectedStatement.Kind}" />
+                                <TextBlock Grid.Row="1" Grid.Column="0" Text="Parameter" Classes="caption" />
+                                <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding SelectedStatement.ParameterClass}" TextWrapping="Wrap" />
+                                <TextBlock Grid.Row="2" Grid.Column="0" Text="Result" Classes="caption" />
+                                <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding SelectedStatement.ResultClass}" TextWrapping="Wrap" />
+                                <TextBlock Grid.Row="3" Grid.Column="0" Text="Result map" Classes="caption" />
+                                <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding SelectedStatement.ResultMap}" TextWrapping="Wrap" />
+                            </Grid>
 
-                    <TabControl Grid.Row="2">
-                        <TabItem Header="Template">
-                            <TextBox Classes="mono"
-                                     Text="{Binding SelectedStatement.SqlTemplate}"
-                                     AcceptsReturn="True"
-                                     IsReadOnly="True"
-                                     TextWrapping="NoWrap"
-                                     ScrollViewer.HorizontalScrollBarVisibility="Auto"
-                                     ScrollViewer.VerticalScrollBarVisibility="Auto" />
-                        </TabItem>
+                            <ListBox Grid.Column="1"
+                                     ItemsSource="{Binding SelectedStatementDiagnostics}"
+                                     MaxHeight="96">
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate x:DataType="models:DiagnosticItem">
+                                        <StackPanel Margin="0,0,0,5">
+                                            <TextBlock Text="{Binding Summary}" FontWeight="SemiBold" />
+                                            <TextBlock Text="{Binding Message}" Classes="caption" TextWrapping="Wrap" />
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
+                        </Grid>
 
-                        <TabItem Header="SQL Preview">
-                            <Grid RowDefinitions="Auto,*,Auto" RowSpacing="8">
-                                <Grid ColumnDefinitions="280,*" ColumnSpacing="8">
-                                    <StackPanel Grid.Column="0">
-                                        <TextBlock Text="Parameters from XML query" Classes="caption" />
-                                        <ScrollViewer MinHeight="160"
-                                                      MaxHeight="260"
-                                                      VerticalScrollBarVisibility="Auto">
-                                            <ItemsControl ItemsSource="{Binding SqlParameters}">
-                                                <ItemsControl.ItemTemplate>
-                                                    <DataTemplate x:DataType="models:SqlParameterInputItem">
-                                                        <Grid ColumnDefinitions="92,74,*" ColumnSpacing="6" Margin="0,0,0,6">
-                                                            <TextBlock Grid.Column="0"
-                                                                       Text="{Binding Name}"
-                                                                       TextTrimming="CharacterEllipsis"
-                                                                       VerticalAlignment="Center" />
-                                                            <TextBlock Grid.Column="1"
-                                                                       Text="{Binding Kind}"
-                                                                       Classes="caption"
-                                                                       TextTrimming="CharacterEllipsis"
-                                                                       VerticalAlignment="Center" />
-                                                            <TextBox Grid.Column="2"
-                                                                     Text="{Binding Value, UpdateSourceTrigger=PropertyChanged}"
-                                                                     PlaceholderText="{Binding Hint}" />
-                                                        </Grid>
-                                                    </DataTemplate>
-                                                </ItemsControl.ItemTemplate>
-                                            </ItemsControl>
-                                        </ScrollViewer>
-                                    </StackPanel>
-                                    <StackPanel Grid.Column="1">
-                                        <TextBlock Text="Executable SQL" Classes="caption" />
-                                        <TextBox Classes="mono"
-                                                 Text="{Binding PreparedSql}"
-                                                 AcceptsReturn="True"
-                                                 IsReadOnly="True"
-                                                 MinHeight="120"
-                                                 TextWrapping="NoWrap"
-                                                 ScrollViewer.HorizontalScrollBarVisibility="Auto"
-                                                 ScrollViewer.VerticalScrollBarVisibility="Auto" />
+                        <TabControl Grid.Row="2">
+                            <TabItem Header="Preview">
+                                <Grid RowDefinitions="Auto,*,Auto" RowSpacing="8">
+                                    <Grid ColumnDefinitions="300,*" ColumnSpacing="10">
+                                        <StackPanel Grid.Column="0">
+                                            <TextBlock Text="Parameter Values" Classes="caption" Margin="0,0,0,5" />
+                                            <ScrollViewer MinHeight="190"
+                                                          MaxHeight="300"
+                                                          VerticalScrollBarVisibility="Auto">
+                                                <ItemsControl ItemsSource="{Binding SqlParameters}">
+                                                    <ItemsControl.ItemTemplate>
+                                                        <DataTemplate x:DataType="models:SqlParameterInputItem">
+                                                            <Grid ColumnDefinitions="92,72,*" ColumnSpacing="6" Margin="0,0,0,6">
+                                                                <TextBlock Grid.Column="0"
+                                                                           Text="{Binding Name}"
+                                                                           TextTrimming="CharacterEllipsis"
+                                                                           VerticalAlignment="Center" />
+                                                                <TextBlock Grid.Column="1"
+                                                                           Text="{Binding Kind}"
+                                                                           Classes="caption"
+                                                                           TextTrimming="CharacterEllipsis"
+                                                                           VerticalAlignment="Center" />
+                                                                <TextBox Grid.Column="2"
+                                                                         Text="{Binding Value, UpdateSourceTrigger=PropertyChanged}"
+                                                                         PlaceholderText="{Binding Hint}" />
+                                                            </Grid>
+                                                        </DataTemplate>
+                                                    </ItemsControl.ItemTemplate>
+                                                </ItemsControl>
+                                            </ScrollViewer>
+                                        </StackPanel>
+
+                                        <StackPanel Grid.Column="1">
+                                            <TextBlock Text="Prepared SQL" Classes="caption" Margin="0,0,0,5" />
+                                            <TextBox Classes="mono"
+                                                     Text="{Binding PreparedSql}"
+                                                     AcceptsReturn="True"
+                                                     IsReadOnly="True"
+                                                     MinHeight="220"
+                                                     TextWrapping="NoWrap"
+                                                     ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                                                     ScrollViewer.VerticalScrollBarVisibility="Auto" />
+                                        </StackPanel>
+                                    </Grid>
+
+                                    <TextBlock Grid.Row="1"
+                                               Text="{Binding SqlPreviewStatus}"
+                                               Classes="caption"
+                                               TextWrapping="Wrap" />
+
+                                    <StackPanel Grid.Row="2" Orientation="Horizontal" Spacing="8">
+                                        <Button Content="Refresh" Click="RefreshSqlPreviewButton_OnClick" />
+                                        <Button Content="Export Selected" Click="ExportSelectedSqlButton_OnClick" />
+                                        <Button Content="Export All" Click="ExportAllSqlButton_OnClick" />
                                     </StackPanel>
                                 </Grid>
+                            </TabItem>
 
-                                <TextBlock Grid.Row="1"
-                                           Text="{Binding SqlPreviewStatus}"
-                                           Classes="caption"
-                                           TextWrapping="Wrap" />
+                            <TabItem Header="Template">
+                                <Grid RowDefinitions="Auto,*" RowSpacing="6">
+                                    <Grid ColumnDefinitions="120,*" ColumnSpacing="8">
+                                        <TextBlock Grid.Column="0" Text="Parameters" Classes="caption" />
+                                        <TextBlock Grid.Column="1" Text="{Binding SelectedStatement.ParameterText}" TextWrapping="Wrap" />
+                                    </Grid>
+                                    <TextBox Grid.Row="1"
+                                             Classes="mono"
+                                             Text="{Binding SelectedStatement.SqlTemplate}"
+                                             AcceptsReturn="True"
+                                             IsReadOnly="True"
+                                             TextWrapping="NoWrap"
+                                             ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                                             ScrollViewer.VerticalScrollBarVisibility="Auto" />
+                                </Grid>
+                            </TabItem>
 
-                                <StackPanel Grid.Row="2" Orientation="Horizontal" Spacing="8">
-                                    <Button Content="Refresh preview" Click="RefreshSqlPreviewButton_OnClick" />
-                                    <Button Content="Export selected SQL" Click="ExportSelectedSqlButton_OnClick" />
-                                    <Button Content="Export all SQL" Click="ExportAllSqlButton_OnClick" />
-                                </StackPanel>
-                            </Grid>
-                        </TabItem>
-
-                        <TabItem Header="Explain Plan">
-                            <Grid RowDefinitions="Auto,Auto,Auto,*" RowSpacing="8">
-                                <Border Classes="panel" Padding="8">
-                                    <Grid RowDefinitions="Auto,Auto,Auto,Auto" ColumnDefinitions="130,*" RowSpacing="5" ColumnSpacing="8">
+                            <TabItem Header="Plan">
+                                <Grid RowDefinitions="Auto,Auto,*" RowSpacing="8">
+                                    <Grid ColumnDefinitions="130,*" RowDefinitions="Auto,Auto,Auto,Auto" RowSpacing="5" ColumnSpacing="8">
                                         <TextBlock Grid.Row="0" Grid.Column="0" Text="Provider" Classes="caption" />
                                         <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding DbProviderSummary}" TextWrapping="Wrap" />
                                         <TextBlock Grid.Row="1" Grid.Column="0" Text="Parameter style" Classes="caption" />
                                         <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding DbParameterSummary}" TextWrapping="Wrap" />
-                                        <TextBlock Grid.Row="2" Grid.Column="0" Text="Connection string" Classes="caption" />
+                                        <TextBlock Grid.Row="2" Grid.Column="0" Text="Connection" Classes="caption" />
                                         <TextBox Grid.Row="2" Grid.Column="1"
                                                  Text="{Binding DbConnectionString, UpdateSourceTrigger=PropertyChanged}" />
-                                        <TextBlock Grid.Row="3" Grid.Column="0" Text="Timeout seconds" Classes="caption" />
+                                        <TextBlock Grid.Row="3" Grid.Column="0" Text="Timeout" Classes="caption" />
                                         <TextBox Grid.Row="3" Grid.Column="1"
                                                  Width="90"
                                                  HorizontalAlignment="Left"
                                                  Text="{Binding CommandTimeoutSeconds, UpdateSourceTrigger=PropertyChanged}" />
                                     </Grid>
-                                </Border>
 
-                                <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="8">
-                                    <Button Content="Reset DB config" Click="ResetDbConfigButton_OnClick" />
-                                    <TextBlock Text="Values come from SqlMap.config/providers.config; edit the connection string here for a test database." Classes="caption" VerticalAlignment="Center" />
-                                </StackPanel>
+                                    <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="8">
+                                        <Button Content="Run Explain" Click="RunExplainPlanButton_OnClick" />
+                                        <Button Content="Reset DB Config" Click="ResetDbConfigButton_OnClick" />
+                                    </StackPanel>
 
-                                <StackPanel Grid.Row="2" Orientation="Horizontal" Spacing="8">
-                                    <Button Content="Run explain plan" Click="RunExplainPlanButton_OnClick" />
-                                    <TextBlock Text="Only SELECT/WITH statements are planned; mutating SQL is blocked." Classes="caption" VerticalAlignment="Center" />
-                                </StackPanel>
-
-                                <TextBox Grid.Row="3"
-                                         Classes="mono"
-                                         Text="{Binding PlanResultText}"
-                                         AcceptsReturn="True"
-                                         IsReadOnly="True"
-                                         TextWrapping="NoWrap"
-                                         ScrollViewer.HorizontalScrollBarVisibility="Auto"
-                                         ScrollViewer.VerticalScrollBarVisibility="Auto" />
-                            </Grid>
-                        </TabItem>
-                    </TabControl>
-                </Grid>
-            </Border>
+                                    <TextBox Grid.Row="2"
+                                             Classes="mono"
+                                             Text="{Binding PlanResultText}"
+                                             AcceptsReturn="True"
+                                             IsReadOnly="True"
+                                             TextWrapping="NoWrap"
+                                             ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                                             ScrollViewer.VerticalScrollBarVisibility="Auto" />
+                                </Grid>
+                            </TabItem>
+                        </TabControl>
+                    </Grid>
+                </Border>
+            </Grid>
         </Grid>
     </DockPanel>
 </Window>

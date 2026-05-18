@@ -5,4 +5,11 @@ public sealed record SqlMapFileItem(
     string Source,
     string ResolvedPath,
     int StatementCount,
-    string Status);
+    string Status)
+{
+    public string DisplayName => string.IsNullOrWhiteSpace(ResolvedPath)
+        ? Source
+        : System.IO.Path.GetFileName(ResolvedPath);
+
+    public string Summary => $"{Status} · {StatementCount} statements";
+}
